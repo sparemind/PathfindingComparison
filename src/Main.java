@@ -18,10 +18,11 @@ public class Main {
     public static final int GRID_MARGIN_Y = 2; // # of cells between each sub grid vertically
     public static final int GRIDS_HORZ = 2; // # of sub grids per row
     public static final int GRIDS_VERT = 2; // # of sub grids per column
-    public static final int BORDER_SIZE = 3; // # of cells padding the frame border
+    public static final int BORDER_SIZE = 3; // # of cells padding the frame border. Must be >= 1
 
-    public static final int STEP_DELAY = 20; // Delay between each stepAlgorithms in milliseconds
+    public static final int STEP_DELAY = 20; // Delay between each step in milliseconds
 
+    public static final int ASCII_OFFSET = 1000; // Value added to ASCII value to get corresponding grid value
     public static final int BG = 1; // Background
     public static final int EMPTY = 2; // Empty grid space
     public static final int WALL = 3; // Wall obstacle
@@ -55,6 +56,11 @@ public class Main {
         grid.setColor(TARGET, Color.RED);
         grid.setColor(EXPLORED, Color.LIGHT_GRAY);
         grid.setColor(SOLUTION, Color.CYAN);
+        for (int i = 0; i < 128; i++) {
+            grid.setText(ASCII_OFFSET + i, (char) i);
+            grid.setTextColor(ASCII_OFFSET + i, Color.WHITE);
+            grid.setColor(ASCII_OFFSET + i, Color.GRAY);
+        }
 
         // Calculate all subgrid positions
         for (int y = 0; y < GRIDS_VERT; y++) {
@@ -73,6 +79,7 @@ public class Main {
         }
         initializeSubgrids();
         initializePathfinders();
+
 
         JFrame frame = grid.getFrame();
         JPanel p = new JPanel();
@@ -107,7 +114,17 @@ public class Main {
         frame.pack();
         frame.setLocationRelativeTo(null);
 
+        for (Point pathfinderPos : subgridPositions) {
+            drawText(pathfinderPos.x, pathfinderPos.y - 1, pathfinders.get(pathfinderPos).toString());
+        }
+
         run();
+    }
+
+    public static void drawText(int x, int y, String text) {
+        for (int i = 0; i < Math.min(text.length(), GRID_WIDTH); i++) {
+            grid.set(x + i, y, ASCII_OFFSET + text.charAt(i));
+        }
     }
 
     // Initialize subgrids to the default blank state

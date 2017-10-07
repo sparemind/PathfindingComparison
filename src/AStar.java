@@ -121,4 +121,9 @@ public class AStar implements Pathfinder {
     public List<Point> getSolution() {
         return this.solutionPath;
     }
+
+    @Override
+    public String toString() {
+        return "A*";
+    }
 }

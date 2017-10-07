@@ -50,18 +50,18 @@ public class Main {
 
         grid.setColor(BG, Color.GRAY);
         grid.setColor(EMPTY, Color.WHITE);
-        grid.setColor(WALL, Color.BLACK);
+        grid.setColor(WALL, new Color(20, 20, 20));
         grid.setColor(START, Color.GREEN);
         grid.setColor(TARGET, Color.RED);
         grid.setColor(EXPLORED, Color.LIGHT_GRAY);
         grid.setColor(SOLUTION, Color.CYAN);
 
         // Calculate all subgrid positions
-        for (int x = 0; x < GRIDS_HORZ; x++) {
-            for (int y = 0; y < GRIDS_VERT; y++) {
+        for (int y = 0; y < GRIDS_VERT; y++) {
+            for (int x = 0; x < GRIDS_HORZ; x++) {
                 int xPos = BORDER_SIZE + x * (GRID_WIDTH + GRID_MARGIN_X);
                 int yPos = BORDER_SIZE + y * (GRID_HEIGHT + GRID_MARGIN_Y);
-                subgridPositions[x * GRIDS_VERT + y] = new Point(xPos, yPos);
+                subgridPositions[y * GRIDS_HORZ + x] = new Point(xPos, yPos);
             }
         }
 
@@ -83,7 +83,6 @@ public class Main {
             public void actionPerformed(ActionEvent e) {
                 started = false;
                 running = false;
-                initializePathfinders();
                 initializeSubgrids();
             }
         });
@@ -125,11 +124,17 @@ public class Main {
     }
 
     public static void initializePathfinders() {
-        pathfinders.put(subgridPositions[0], new AStar());
-        pathfindersCompletion.put(subgridPositions[0], false);
-        Point globalStart = new Point(startLocalPos.x + subgridPositions[0].x, startLocalPos.y + subgridPositions[0].y);
-        Point globalTarget = new Point(targetLocalPos.x + subgridPositions[0].x, targetLocalPos.y + subgridPositions[0].y);
-        pathfinders.get(subgridPositions[0]).initialize(globalStart, globalTarget);
+        pathfinders.put(subgridPositions[0], new Dijkstra());
+        pathfinders.put(subgridPositions[1], new AStar());
+        pathfinders.put(subgridPositions[2], new StrongAStar());
+        pathfinders.put(subgridPositions[3], new AStar());
+
+        for (Point pathfinderPos : subgridPositions) {
+            pathfindersCompletion.put(pathfinderPos, false);
+            Point globalStart = new Point(startLocalPos.x + pathfinderPos.x, startLocalPos.y + pathfinderPos.y);
+            Point globalTarget = new Point(targetLocalPos.x + pathfinderPos.x, targetLocalPos.y + pathfinderPos.y);
+            pathfinders.get(pathfinderPos).initialize(globalStart, globalTarget);
+        }
 
     }
 
@@ -206,26 +211,31 @@ public class Main {
     }
 
     public static void stepAlgorithms() {
+        if (!started) {
+            initializePathfinders();
+        }
         started = true;
 
-        if (!pathfindersCompletion.get(subgridPositions[0])) {
-            Pathfinder AStar = pathfinders.get(subgridPositions[0]);
-            List<Point> exploredCells = AStar.step();
-            for (Point p : exploredCells) {
-                int currentValue = grid.get(p);
-                if (currentValue != START && currentValue != TARGET) {
-                    grid.set(p, EXPLORED);
-                }
-            }
-            List<Point> solution = AStar.getSolution();
-            if (solution != null) {
-                for (Point p : solution) {
+        for (Point pathfinderPos : subgridPositions) {
+            if (!pathfindersCompletion.get(pathfinderPos)) {
+                Pathfinder AStar = pathfinders.get(pathfinderPos);
+                List<Point> exploredCells = AStar.step();
+                for (Point p : exploredCells) {
                     int currentValue = grid.get(p);
                     if (currentValue != START && currentValue != TARGET) {
-                        grid.set(p, SOLUTION);
+                        grid.set(p, EXPLORED);
                     }
                 }
-                pathfindersCompletion.put(subgridPositions[0], true);
+                List<Point> solution = AStar.getSolution();
+                if (solution != null) {
+                    for (Point p : solution) {
+                        int currentValue = grid.get(p);
+                        if (currentValue != START && currentValue != TARGET) {
+                            grid.set(p, SOLUTION);
+                        }
+                    }
+                    pathfindersCompletion.put(pathfinderPos, true);
+                }
             }
         }
     }

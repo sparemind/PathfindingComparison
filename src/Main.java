@@ -6,6 +6,9 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Main {
     public static final int GRID_WIDTH = 30; // Width of each sub grid in number of cells
@@ -17,21 +20,27 @@ public class Main {
     public static final int GRIDS_VERT = 2; // # of sub grids per column
     public static final int BORDER_SIZE = 3; // # of cells padding the frame border
 
+    public static final int STEP_DELAY = 20; // Delay between each stepAlgorithms in milliseconds
+
     public static final int BG = 1; // Background
     public static final int EMPTY = 2; // Empty grid space
     public static final int WALL = 3; // Wall obstacle
     public static final int START = 4; // Pathfinding start point
     public static final int TARGET = 5; // Pathfinding end point
     public static final int EXPLORED = 6; // Pathfinding explored cell
+    public static final int SOLUTION = 7; // Final solution path
 
     private static SimpleGrid grid;
     private static boolean isMouseDown = false;
     private static int currentlyClicked = -1;
+    private static boolean started = false;
+    private static boolean running = false;
     private static Point[] subgridPositions = new Point[GRIDS_HORZ * GRIDS_VERT];
     private static Point startLocalPos;
     private static Point targetLocalPos;
 
-    private static Dijkstra dijkstra = new Dijkstra();
+    private static Map<Point, Pathfinder> pathfinders = new HashMap<>();
+    private static Map<Point, Boolean> pathfindersCompletion = new HashMap<>();
 
     public static void main(String[] args) {
         int totalWidth = (GRID_WIDTH * GRIDS_HORZ) + (GRIDS_HORZ - 1) * GRID_MARGIN_X + (BORDER_SIZE * 2);
@@ -45,6 +54,7 @@ public class Main {
         grid.setColor(START, Color.GREEN);
         grid.setColor(TARGET, Color.RED);
         grid.setColor(EXPLORED, Color.LIGHT_GRAY);
+        grid.setColor(SOLUTION, Color.CYAN);
 
         // Calculate all subgrid positions
         for (int x = 0; x < GRIDS_HORZ; x++) {
@@ -62,7 +72,7 @@ public class Main {
             }
         }
         initializeSubgrids();
-
+        initializePathfinders();
 
         JFrame frame = grid.getFrame();
         JPanel p = new JPanel();
@@ -71,6 +81,9 @@ public class Main {
         resetButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                started = false;
+                running = false;
+                initializePathfinders();
                 initializeSubgrids();
             }
         });
@@ -78,23 +91,14 @@ public class Main {
         stepButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("step");
-                // List<Point> exploredCells = dijkstra.step();
-                // for (Point p : exploredCells) {
-                //     grid.set(p, EXPLORED);
-                // }
+                stepAlgorithms();
             }
         });
         JButton runButton = new JButton("Run");
         runButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println(runButton.getText());
-                if (runButton.getText().equals("Run")) {
-                    runButton.setText("Stop");
-                } else {
-                    runButton.setText("Run");
-                }
+                running = true;
             }
         });
         p.add(resetButton);
@@ -103,25 +107,6 @@ public class Main {
         frame.add(p, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
-
-        // Set<Point> points = new HashSet<>();
-        // Point start = null;
-        // Point target = null;
-        // for (int x = BORDER_SIZE; x < GRID_WIDTH; x++) {
-        //     for (int y = BORDER_SIZE; y < GRID_HEIGHT; y++) {
-        //         int value = grid.get(x, y);
-        //         if (value != WALL) {
-        //             points.add(new Point(x, y));
-        //         }
-        //         if (value == START) {
-        //             start = new Point(x, y);
-        //         }
-        //         if (value == TARGET) {
-        //             target = new Point(x, y);
-        //         }
-        //     }
-        // }
-        // dijkstra.initialize(points, start, target);
 
         run();
     }
@@ -139,11 +124,20 @@ public class Main {
         subgridsSet(targetLocalPos, TARGET);
     }
 
+    public static void initializePathfinders() {
+        pathfinders.put(subgridPositions[0], new AStar());
+        pathfindersCompletion.put(subgridPositions[0], false);
+        Point globalStart = new Point(startLocalPos.x + subgridPositions[0].x, startLocalPos.y + subgridPositions[0].y);
+        Point globalTarget = new Point(targetLocalPos.x + subgridPositions[0].x, targetLocalPos.y + subgridPositions[0].y);
+        pathfinders.get(subgridPositions[0]).initialize(globalStart, globalTarget);
+
+    }
+
     public static void run() {
         while (true) {
             if (grid.isMouseDown()) {
                 Point mousePos = grid.getMousePosition();
-                if (mousePos == null) {
+                if (started || mousePos == null) {
                     continue;
                 }
                 Point mouseLocalPos = getLocalPos(mousePos);
@@ -185,6 +179,53 @@ public class Main {
                 }
             } else {
                 isMouseDown = false;
+            }
+
+            // TODO need way of stopping if no solution exists
+            while (running) {
+                stepAlgorithms();
+
+                boolean allDone = true;
+                for (Point p : pathfindersCompletion.keySet()) {
+                    if (!pathfindersCompletion.get(p)) {
+                        allDone = false;
+                        break;
+                    }
+                }
+                if (allDone) {
+                    running = false;
+                }
+
+                try {
+                    Thread.sleep(STEP_DELAY);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static void stepAlgorithms() {
+        started = true;
+
+        if (!pathfindersCompletion.get(subgridPositions[0])) {
+            Pathfinder AStar = pathfinders.get(subgridPositions[0]);
+            List<Point> exploredCells = AStar.step();
+            for (Point p : exploredCells) {
+                int currentValue = grid.get(p);
+                if (currentValue != START && currentValue != TARGET) {
+                    grid.set(p, EXPLORED);
+                }
+            }
+            List<Point> solution = AStar.getSolution();
+            if (solution != null) {
+                for (Point p : solution) {
+                    int currentValue = grid.get(p);
+                    if (currentValue != START && currentValue != TARGET) {
+                        grid.set(p, SOLUTION);
+                    }
+                }
+                pathfindersCompletion.put(subgridPositions[0], true);
             }
         }
     }

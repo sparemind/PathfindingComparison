@@ -20,14 +20,14 @@ import java.util.Map;
  * text, and text color, which are then drawn in any box containing the corresponding value.
  *
  * @author Jake Chiang
- * @version 1.2
+ * @version 1.2.2
  */
 public class SimpleGrid {
     private GridPanel panel;
     private JFrame frame;
     private List<int[][]> grids;
     private Map<Integer, ValueData> valueData;
-    private boolean mouseDown;
+    private volatile boolean mouseDown;
     private boolean autoRepaint;
 
     /**

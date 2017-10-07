@@ -28,13 +28,15 @@ public class Main {
     private static boolean isMouseDown = false;
     private static int currentlyClicked = -1;
     private static Point[] subgridPositions = new Point[GRIDS_HORZ * GRIDS_VERT];
+    private static Point startLocalPos;
+    private static Point targetLocalPos;
 
     private static Dijkstra dijkstra = new Dijkstra();
 
     public static void main(String[] args) {
         int totalWidth = (GRID_WIDTH * GRIDS_HORZ) + (GRIDS_HORZ - 1) * GRID_MARGIN_X + (BORDER_SIZE * 2);
         int totalHeight = (GRID_HEIGHT * GRIDS_VERT) + (GRIDS_VERT - 1) * GRID_MARGIN_Y + (BORDER_SIZE * 2);
-        grid = new SimpleGrid(totalWidth, totalHeight, CELL_SIZE, 1, "Pathfinding Algorithms Comparison");
+        grid = new SimpleGrid(totalWidth, totalHeight, CELL_SIZE, 1, "Pathfinding Algorithm Comparison");
         grid.setGridlineColor(Color.GRAY);
 
         grid.setColor(BG, Color.GRAY);
@@ -63,7 +65,6 @@ public class Main {
 
 
         JFrame frame = grid.getFrame();
-
         JPanel p = new JPanel();
 
         JButton resetButton = new JButton("Reset");
@@ -125,21 +126,17 @@ public class Main {
         run();
     }
 
+    // Initialize subgrids to the default blank state
     public static void initializeSubgrids() {
-        for (Point p : subgridPositions) {
-            resetSubGrid(p);
-        }
-    }
-
-    public static void resetSubGrid(Point pos) {
         for (int x = 0; x < GRID_WIDTH; x++) {
             for (int y = 0; y < GRID_HEIGHT; y++) {
-                grid.set(pos.x + x, pos.y + y, EMPTY);
+                subgridsSet(x, y, EMPTY);
             }
         }
-
-        grid.set(pos.x + (GRID_WIDTH / 4), pos.y + GRID_HEIGHT / 2, START);
-        grid.set(pos.x + (GRID_WIDTH - GRID_WIDTH / 4), pos.y + GRID_HEIGHT / 2, TARGET);
+        startLocalPos = new Point(GRID_WIDTH / 4, GRID_HEIGHT / 2);
+        targetLocalPos = new Point(GRID_WIDTH - GRID_WIDTH / 4, GRID_HEIGHT / 2);
+        subgridsSet(startLocalPos, START);
+        subgridsSet(targetLocalPos, TARGET);
     }
 
     public static void run() {
@@ -149,6 +146,8 @@ public class Main {
                 if (mousePos == null) {
                     continue;
                 }
+                Point mouseLocalPos = getLocalPos(mousePos);
+
                 // Mouse pressed down for the first time
                 if (!isMouseDown) {
                     isMouseDown = true;
@@ -158,14 +157,26 @@ public class Main {
                     switch (currentlyClicked) {
                         case EMPTY:
                             if (currentlyOver == EMPTY) {
-                                subgridsSet(getLocalPos(mousePos), WALL);
-                                // grid.set(mousePos, WALL);
+                                subgridsSet(mouseLocalPos, WALL);
                             }
                             break;
                         case WALL:
                             if (currentlyOver == WALL) {
-                                subgridsSet(getLocalPos(mousePos), EMPTY);
-                                // grid.set(mousePos, EMPTY);
+                                subgridsSet(mouseLocalPos, EMPTY);
+                            }
+                            break;
+                        case START:
+                            if (currentlyOver == EMPTY) {
+                                subgridsSet(startLocalPos, EMPTY);
+                                subgridsSet(mouseLocalPos, START);
+                                startLocalPos = mouseLocalPos;
+                            }
+                            break;
+                        case TARGET:
+                            if (currentlyOver == EMPTY) {
+                                subgridsSet(targetLocalPos, EMPTY);
+                                subgridsSet(mouseLocalPos, TARGET);
+                                targetLocalPos = mouseLocalPos;
                             }
                             break;
                         default:
@@ -188,8 +199,12 @@ public class Main {
     }
 
     public static void subgridsSet(Point localPos, int value) {
+        subgridsSet(localPos.x, localPos.y, value);
+    }
+
+    public static void subgridsSet(int x, int y, int value) {
         for (Point p : subgridPositions) {
-            grid.set(p.x + localPos.x, p.y + localPos.y, value);
+            grid.set(p.x + x, p.y + y, value);
         }
     }
 
@@ -201,17 +216,4 @@ public class Main {
         int value = grid.get(p.x, p.y);
         return value == EMPTY || value == TARGET;
     }
-
-    // public static int[][] getSubGrid(int subGridX, int subGridY) {
-    //     int[][] subGrid = new int[GRID_HEIGHT][GRID_WIDTH];
-    //
-    //     for (int y = subGridY; y < GRID_HEIGHT; y++) {
-    //         subGrid[y] = new int[GRID_WIDTH];
-    //         for (int x = subGridX; x < GRID_WIDTH; x++) {
-    //             subGrid[y][x] = grid.get(x, y);
-    //         }
-    //     }
-    //
-    //     return subGrid;
-    // }
 }

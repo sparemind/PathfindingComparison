@@ -90,29 +90,13 @@ public class Main {
         JFrame frame = grid.getFrame();
         JPanel p = new JPanel();
 
-        JButton resetButton = new JButton("Reset");
-        resetButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                started = false;
-                running = false;
-                initializeSubgrids();
-            }
-        });
         JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 started = false;
                 running = false;
-                for (int x = 0; x < grid.getWidth(); x++) {
-                    for (int y = 0; y < grid.getHeight(); y++) {
-                        int value = grid.get(x, y);
-                        if (value == EXPLORED || value == SOLUTION) {
-                            grid.set(x, y, EMPTY);
-                        }
-                    }
-                }
+                initializeSubgrids();
             }
         });
         JButton stepButton = new JButton("Step");
@@ -129,10 +113,26 @@ public class Main {
                 running = true;
             }
         });
-        p.add(resetButton);
+        JButton resetButton = new JButton("Reset");
+        resetButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                started = false;
+                running = false;
+                for (int x = 0; x < grid.getWidth(); x++) {
+                    for (int y = 0; y < grid.getHeight(); y++) {
+                        int value = grid.get(x, y);
+                        if (value == EXPLORED || value == SOLUTION) {
+                            grid.set(x, y, EMPTY);
+                        }
+                    }
+                }
+            }
+        });
         p.add(clearButton);
         p.add(stepButton);
         p.add(runButton);
+        p.add(resetButton);
         frame.add(p, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);

@@ -20,7 +20,7 @@ import java.util.Map;
  * text, and text color, which are then drawn in any box containing the corresponding value.
  *
  * @author Jake Chiang
- * @version 1.2.2
+ * @version 1.2.4
  */
 public class SimpleGrid {
     private GridPanel panel;
@@ -159,7 +159,8 @@ public class SimpleGrid {
     }
 
     /**
-     * Set whether to automatically repaint after a change is made.
+     * Set whether to automatically repaint after a change is made. By default, auto repainting is
+     * enabled.
      *
      * @param autoRepaint Whether to automatically repaint after the grid or its settings change.
      * @see SimpleGrid#repaint()
@@ -221,7 +222,7 @@ public class SimpleGrid {
 
     /**
      * Set the cell at the given coordinates to a value. Sets the cell of the default grid (layer
-     * 0).
+     * 0). This is equivalent to calling set(0, Point, int).
      *
      * @param x     The x-coordinate of the cell to set.
      * @param y     The y-coordinate of the cell to set.
@@ -275,8 +276,112 @@ public class SimpleGrid {
     }
 
     /**
+     * Fills the grid with a value, setting all cells in the grid to the value. Fills the default
+     * grid (layer 0). Repaints grid if auto repainting is enabled. This is equivalent to calling
+     * fill(0, int).
+     *
+     * @param value The value to set all the cells in the grid to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
+     * @since 1.2.3
+     */
+    public void fill(int value) {
+        fill(0, value);
+    }
+
+    /**
+     * Fills the grid with a value, setting all cells in the grid to the value. Repaints grid if
+     * auto repainting is enabled.
+     *
+     * @param layer The grid layer to fill. If not a valid layer, the grid will not be changed.
+     * @param value The value to set all the cells in the grid layer to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
+     * @since 1.2.3
+     */
+    public void fill(int layer, int value) {
+        if (layer < 0 || layer > this.grids.size() - 1) {
+            return;
+        }
+        for (int x = 0; x < this.panel.width; x++) {
+            for (int y = 0; y < this.panel.height; y++) {
+                this.grids.get(layer)[y][x] = value;
+            }
+        }
+        tryRepaint();
+    }
+
+    /**
+     * Fills the given row with a value, setting all cells in the row to the value. Repaints grid if
+     * auto repainting is enabled. This is equivalent to calling fillRow(0, int).
+     *
+     * @param row   The y-coordinate of the row to fill. If not a valid row, the grid will not be
+     *              changed.
+     * @param value The value to set all the cells in the row to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
+     * @since 1.2.4
+     */
+    public void fillRow(int row, int value) {
+        fillRow(0, row, value);
+    }
+
+    /**
+     * Fills the given row with a value, setting all cells in the row to the value. Repaints grid if
+     * auto repainting is enabled.
+     *
+     * @param layer The grid layer to fill the row of. If not a valid layer, the grid will not be
+     *              changed.
+     * @param row   The y-coordinate of the row to fill. If not a valid row, the grid will not be
+     *              changed.
+     * @param value The value to set all the cells in the row to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
+     * @since 1.2.4
+     */
+    public void fillRow(int layer, int row, int value) {
+        if (row < 0 || row >= this.panel.height || layer < 0 || layer > this.grids.size() - 1) {
+            return;
+        }
+        for (int x = 0; x < this.panel.width; x++) {
+            this.grids.get(layer)[row][x] = value;
+        }
+    }
+
+    /**
+     * Fills the given column with a value, setting all cells in the column to the value. Repaints
+     * grid if auto repainting is enabled. This is equivalent to calling fillColumn(0, int).
+     *
+     * @param column The x-coordinate of the column to fill. If not a valid row, the grid will not
+     *               be changed.
+     * @param value  The value to set all the cells in the column to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
+     * @since 1.2.4
+     */
+    public void fillColumn(int column, int value) {
+        fillColumn(0, column, value);
+    }
+
+    /**
+     * Fills the given column with a value, setting all cells in the column to the value. Repaints
+     * grid if auto repainting is enabled.
+     *
+     * @param layer  The grid layer to fill the row of. If not a valid layer, the grid will not be
+     *               changed.
+     * @param column The x-coordinate of the column to fill. If not a valid row, the grid will not
+     *               be changed.
+     * @param value  The value to set all the cells in the column to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
+     * @since 1.2.4
+     */
+    public void fillColumn(int layer, int column, int value) {
+        if (column < 0 || column >= this.panel.width || layer < 0 || layer > this.grids.size() - 1) {
+            return;
+        }
+        for (int y = 0; y < this.panel.height; y++) {
+            this.grids.get(layer)[y][column] = value;
+        }
+    }
+
+    /**
      * Returns the value of the cell at the given coordinates. Gets the cell of the default grid
-     * (layer 0).
+     * (layer 0). This is equivalent to calling get(0, Point).
      *
      * @param pos The coordinates of the cell to get.
      * @return The value of the cell. If the given position is null, returns -1.
@@ -290,7 +395,7 @@ public class SimpleGrid {
 
     /**
      * Returns the value of the cell at the given coordinates. Gets the cell of the default
-     * grid (layer 0).
+     * grid (layer 0). This is equivalent to calling get(0, int, int).
      *
      * @param x The x-coordinate of the cell to get.
      * @param y The y-coordinate of the cell to get.
@@ -341,6 +446,7 @@ public class SimpleGrid {
      * Set the color of the gridlines. Repaints grid if auto repainting is enabled.
      *
      * @param color The color to set the gridlines to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
      */
     public void setGridlineColor(Color color) {
         this.panel.setBackground(color);

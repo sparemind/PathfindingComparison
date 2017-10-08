@@ -21,7 +21,7 @@ import java.util.Map;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.2
+ * @version v1.2.1
  */
 public class Main {
     /**
@@ -124,9 +124,9 @@ public class Main {
 
         // Initialize pathfinders
         pathfinders.put(subgridPositions[0], new Dijkstra());
-        pathfinders.put(subgridPositions[1], new AStar());
-        pathfinders.put(subgridPositions[2], new StrongAStar());
-        pathfinders.put(subgridPositions[3], new BFS());
+        pathfinders.put(subgridPositions[1], new BFS());
+        pathfinders.put(subgridPositions[2], new AStar());
+        pathfinders.put(subgridPositions[3], new StrongAStar());
         initializePathfinders();
 
 

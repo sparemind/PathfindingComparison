@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+/**
+ * Breadth First Search Algorithm
+ */
 public class BFS implements Pathfinder {
     private Point target;
     private Queue<Point> openSet;
@@ -72,7 +75,13 @@ public class BFS implements Pathfinder {
         return exploredCells;
     }
 
-    public void calculateSolutionPath(Point target) {
+    /**
+     * Fills solutionPath with the nodes that make the path from the start point to the target
+     * point. Nodes are ordered starting from the path start point to the path endpoint.
+     *
+     * @param target The endpoint of the path.
+     */
+    private void calculateSolutionPath(Point target) {
         this.solutionPath = new LinkedList<>();
 
         while (target != null) {

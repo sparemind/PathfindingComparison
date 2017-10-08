@@ -6,12 +6,15 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 
+/**
+ * A* Search Algorithm
+ */
 public class AStar implements Pathfinder {
     private static class Node implements Comparable<Node> {
-        public final Point point;
-        public double gScore;
-        public double fScore;
-        public Node cameFrom;
+        public final Point point; // Position of this node
+        public double gScore; // The real cost to reach this node
+        public double fScore; // The total cost to reach this node (including heuristic cost)
+        public Node cameFrom; // Node on the path back to the start
 
         public Node(Point point) {
             this.point = point;
@@ -105,11 +108,24 @@ public class AStar implements Pathfinder {
         return exploredCells;
     }
 
+    /**
+     * Returns the Manhattan distance between the given points.
+     *
+     * @param p1 First point of the point pair to calculate the heuristic of.
+     * @param p2 Second point of the point pair to calculate the heuristic of.
+     * @return The Manhattan distance between the two points.
+     */
     protected double calcHeuristic(Point p1, Point p2) {
-        return p1.distance(p2);
+        return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
     }
 
-    public void calculateSolutionPath(Node target) {
+    /**
+     * Fills solutionPath with the nodes that make the path from the start point to the target
+     * point. Nodes are ordered starting from the path start point to the path endpoint.
+     *
+     * @param target The end node of the path.
+     */
+    private void calculateSolutionPath(Node target) {
         this.solutionPath = new LinkedList<>();
 
         while (target != null) {

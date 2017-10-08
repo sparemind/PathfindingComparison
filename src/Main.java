@@ -10,19 +10,62 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A visual side-by-side comparison of common pathfinding algorithms.
+ * <p>
+ * The currently supported algorithms are:
+ * <ul>
+ * <li>Dijkstra's Algorithm</li>
+ * <li>A* Search (2 variants)</li>
+ * <li>Breadth First Search</li>
+ * </ul>
+ *
+ * @author Jake Chiang
+ * @version v1.2
+ */
 public class Main {
-    public static final int GRID_WIDTH = 30; // Width of each sub grid in number of cells
-    public static final int GRID_HEIGHT = 21; // Height of each sub grid in number of cells
-    public static final int CELL_SIZE = 12; // Size of each cell in pixels
-    public static final int GRID_MARGIN_X = 2; // # of cells between each sub grid horizontally
-    public static final int GRID_MARGIN_Y = 2; // # of cells between each sub grid vertically
-    public static final int GRIDS_HORZ = 2; // # of sub grids per row
-    public static final int GRIDS_VERT = 2; // # of sub grids per column
-    public static final int BORDER_SIZE = 3; // # of cells padding the frame border. Must be >= 1
+    /**
+     * Width of each sub grid in number of cells.
+     */
+    public static final int GRID_WIDTH = 30;
+    /**
+     * Height of each sub grid in number of cells.
+     */
+    public static final int GRID_HEIGHT = 21;
+    /**
+     * Size of each cell in pixels.
+     */
+    public static final int CELL_SIZE = 12;
+    /**
+     * Number of cells between each subgrid horizontally.
+     */
+    public static final int GRID_MARGIN_X = 2;
+    /**
+     * Number of cells between each sub grid vertically.
+     */
+    public static final int GRID_MARGIN_Y = 2;
+    /**
+     * Number of subgrids per row.
+     */
+    public static final int GRIDS_HORZ = 2;
+    /**
+     * Number of subgrids per column.
+     */
+    public static final int GRIDS_VERT = 2;
+    /**
+     * Number of cells padding the frame border. Must be &gt;= 1.
+     */
+    public static final int BORDER_SIZE = 3;
 
-    public static final int STEP_DELAY = 20; // Delay between each step in milliseconds
+    /**
+     * Delay between each step in milliseconds.
+     */
+    public static final int STEP_DELAY = 12;
 
-    public static final int ASCII_OFFSET = 1000; // Value added to ASCII value to get corresponding grid value
+    /**
+     * Value added to ASCII value to get corresponding grid value.
+     */
+    public static final int ASCII_OFFSET = 1000;
     public static final int BG = 1; // Background
     public static final int EMPTY = 2; // Empty grid space
     public static final int WALL = 3; // Wall obstacle
@@ -144,13 +187,25 @@ public class Main {
         run();
     }
 
+    /**
+     * Draws the given text into grid cells at a location.
+     *
+     * @param x    The x-coordinate of the left most letter.
+     * @param y    The y-coordinate of the line of text.
+     * @param text The text to draw.
+     */
     public static void drawText(int x, int y, String text) {
         for (int i = 0; i < Math.min(text.length(), GRID_WIDTH); i++) {
             grid.set(x + i, y, ASCII_OFFSET + text.charAt(i));
         }
     }
 
-    // Initialize subgrids to the default blank state
+    /**
+     * Initializes subgrids to the default blank state. All cells will be EMPTY except for the start
+     * and end points. The start point will be located at 25% of the subgrid width, and the end
+     * point will be located at 75% of the subgrid width. Both will be centered vertically in the
+     * subgrid.
+     */
     public static void initializeSubgrids() {
         for (int x = 0; x < GRID_WIDTH; x++) {
             for (int y = 0; y < GRID_HEIGHT; y++) {
@@ -163,6 +218,10 @@ public class Main {
         subgridsSet(targetLocalPos, TARGET);
     }
 
+    /**
+     * Initializes all pathfinders with the currently set start and endpoints. All pathfinders are
+     * also marked as not completed.
+     */
     public static void initializePathfinders() {
         for (Point pathfinderPos : subgridPositions) {
             pathfindersCompletion.put(pathfinderPos, false);
@@ -173,6 +232,9 @@ public class Main {
 
     }
 
+    /**
+     * Main loop. Controls mouse input and algorithm progression.
+     */
     public static void run() {
         while (true) {
             if (grid.isMouseDown()) {
@@ -189,24 +251,24 @@ public class Main {
                 } else { // Mouse already down
                     int currentlyOver = grid.get(mousePos);
                     switch (currentlyClicked) {
-                        case EMPTY:
+                        case EMPTY: // Make walls
                             if (currentlyOver == EMPTY) {
                                 subgridsSet(mouseLocalPos, WALL);
                             }
                             break;
-                        case WALL:
+                        case WALL: // Erase walls
                             if (currentlyOver == WALL) {
                                 subgridsSet(mouseLocalPos, EMPTY);
                             }
                             break;
-                        case START:
+                        case START: // Drag start point
                             if (currentlyOver == EMPTY) {
                                 subgridsSet(startLocalPos, EMPTY);
                                 subgridsSet(mouseLocalPos, START);
                                 startLocalPos = mouseLocalPos;
                             }
                             break;
-                        case TARGET:
+                        case TARGET: // Drag target point
                             if (currentlyOver == EMPTY) {
                                 subgridsSet(targetLocalPos, EMPTY);
                                 subgridsSet(mouseLocalPos, TARGET);
@@ -221,7 +283,8 @@ public class Main {
                 isMouseDown = false;
             }
 
-            // TODO need way of stopping if no solution exists
+            // Continually advances all algorithms until they complete, with a small delay between
+            // each step.
             while (running) {
                 stepAlgorithms();
 
@@ -245,6 +308,9 @@ public class Main {
         }
     }
 
+    /**
+     * Advances all algorithms one iteration.
+     */
     public static void stepAlgorithms() {
         if (!started) {
             initializePathfinders();
@@ -275,25 +341,50 @@ public class Main {
         }
     }
 
+    /**
+     * Transforms the given global grid coordinates to the local coordinates of subgrids.
+     *
+     * @param globalPos The global grid coordinates to transform.
+     * @return The given coordinates as local coordinates of subgrids.
+     */
     public static Point getLocalPos(Point globalPos) {
         Point localPos = new Point(globalPos);
-        localPos.translate(-BORDER_SIZE, -BORDER_SIZE);
+        localPos.translate(-BORDER_SIZE, -BORDER_SIZE); // Remove border
         localPos.x = localPos.x % (GRID_WIDTH + GRID_MARGIN_X);
         localPos.y = localPos.y % (GRID_HEIGHT + GRID_MARGIN_Y);
 
         return localPos;
     }
 
+    /**
+     * Sets a cell in all subgrids to a given value.
+     *
+     * @param localPos The cell to set, in local subgrid coordinates.
+     * @param value    The value to set the cell to.
+     */
     public static void subgridsSet(Point localPos, int value) {
         subgridsSet(localPos.x, localPos.y, value);
     }
 
+    /**
+     * Sets a cell in all subgrids to a given value.
+     *
+     * @param x     The x-coordinate of the cell to set, in local subgrid coordinates.
+     * @param y     The y-coordinate of the cell to set, in local subgrid coordinates.
+     * @param value The value to set the cell to.
+     */
     public static void subgridsSet(int x, int y, int value) {
         for (Point p : subgridPositions) {
             grid.set(p.x + x, p.y + y, value);
         }
     }
 
+    /**
+     * Returns whether a cell is traversable as part of a path.
+     *
+     * @param p The cell to check.
+     * @return Whether the cell is empty or the target cell.
+     */
     public static boolean isOpen(Point p) {
         if (grid.isOOB(p.x, p.y)) {
             return false;

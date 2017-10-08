@@ -78,6 +78,12 @@ public class Main {
             }
         }
         initializeSubgrids();
+
+        // Initialize pathfinders
+        pathfinders.put(subgridPositions[0], new Dijkstra());
+        pathfinders.put(subgridPositions[1], new AStar());
+        pathfinders.put(subgridPositions[2], new StrongAStar());
+        pathfinders.put(subgridPositions[3], new BFS());
         initializePathfinders();
 
 
@@ -91,6 +97,22 @@ public class Main {
                 started = false;
                 running = false;
                 initializeSubgrids();
+            }
+        });
+        JButton clearButton = new JButton("Clear");
+        clearButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                started = false;
+                running = false;
+                for (int x = 0; x < grid.getWidth(); x++) {
+                    for (int y = 0; y < grid.getHeight(); y++) {
+                        int value = grid.get(x, y);
+                        if (value == EXPLORED || value == SOLUTION) {
+                            grid.set(x, y, EMPTY);
+                        }
+                    }
+                }
             }
         });
         JButton stepButton = new JButton("Step");
@@ -108,6 +130,7 @@ public class Main {
             }
         });
         p.add(resetButton);
+        p.add(clearButton);
         p.add(stepButton);
         p.add(runButton);
         frame.add(p, BorderLayout.SOUTH);
@@ -141,11 +164,6 @@ public class Main {
     }
 
     public static void initializePathfinders() {
-        pathfinders.put(subgridPositions[0], new Dijkstra());
-        pathfinders.put(subgridPositions[1], new AStar());
-        pathfinders.put(subgridPositions[2], new StrongAStar());
-        pathfinders.put(subgridPositions[3], new AStar());
-
         for (Point pathfinderPos : subgridPositions) {
             pathfindersCompletion.put(pathfinderPos, false);
             Point globalStart = new Point(startLocalPos.x + pathfinderPos.x, startLocalPos.y + pathfinderPos.y);

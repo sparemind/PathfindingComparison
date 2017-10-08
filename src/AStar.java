@@ -1,6 +1,7 @@
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -109,10 +110,10 @@ public class AStar implements Pathfinder {
     }
 
     public void calculateSolutionPath(Node target) {
-        this.solutionPath = new ArrayList<>();
+        this.solutionPath = new LinkedList<>();
 
         while (target != null) {
-            this.solutionPath.add(target.point);
+            this.solutionPath.add(0, target.point);
             target = target.cameFrom;
         }
     }

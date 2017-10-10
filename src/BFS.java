@@ -38,8 +38,12 @@ public class BFS implements Pathfinder {
             // Get next unvisited node
             Point current = this.openSet.remove();
 
-            // Ignore if already visited
-            if (!this.closedSet.contains(current)) {
+            // Try again with next cell if this one was already visited.
+            // NOTE: Not part of the actual BFS. This just prevents a step() call from
+            // being wasted and keeps the algorithm on an accurate pace with the others.
+            if (this.closedSet.contains(current)) {
+                return step();
+            } else {
                 // Mark as now visited
                 this.closedSet.add(current);
 

@@ -7,6 +7,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,8 +26,9 @@ import java.util.Map;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.3
+ * @version v1.3.1
  */
+// TODO add slider for run speed
 public class Main {
     /**
      * Width of each sub grid in number of cells.
@@ -47,7 +49,7 @@ public class Main {
     /**
      * Number of cells between each sub grid vertically.
      */
-    public static final int GRID_MARGIN_Y = 2;
+    public static final int GRID_MARGIN_Y = 3;
     /**
      * Number of subgrids per row.
      */
@@ -100,7 +102,7 @@ public class Main {
     private static Point targetLocalPos;
 
     private static Map<Point, Pathfinder> pathfinders = new HashMap<>();
-    private static Map<Point, Boolean> pathfindersCompletion = new HashMap<>();
+    private static Map<Point, PathfinderData> pathfinderData = new HashMap<>();
 
     public static void main(String[] args) {
         int totalWidth = (GRID_WIDTH * GRIDS_HORZ) + (GRIDS_HORZ - 1) * GRID_MARGIN_X + (BORDER_SIZE * 2);
@@ -124,7 +126,7 @@ public class Main {
         for (int i = 1; i < MAX_COST; i++) {
             int value = WEIGHTED + i;
             int increment = (255 - WEIGHTED_MIN_COLOR) / MAX_COST;
-            grid.setColor(value, new Color(255, 255 - i * increment, 255 - i * increment));
+            grid.setColor(value, new Color(255, 255 - (i * increment) / 2, 255 - i * increment));
             grid.setTextColor(value, Color.BLACK);
         }
 
@@ -155,8 +157,9 @@ public class Main {
         // Initialize GUI and grid labels
         initializeGUI();
         for (Point pathfinderPos : subgridPositions) {
-            drawText(pathfinderPos.x, pathfinderPos.y - 1, pathfinders.get(pathfinderPos).toString());
+            drawText(pathfinderPos.x, pathfinderPos.y - 2, pathfinders.get(pathfinderPos).toString());
         }
+        updateSolutionLabels();
 
         run();
     }
@@ -166,10 +169,10 @@ public class Main {
      *
      * @since v1.3
      */
-    public static void initializeGUI() {
+    private static void initializeGUI() {
+        //////////////////////// BOTTOM ////////////////////////
         JFrame frame = grid.getFrame();
-        JPanel p = new JPanel();
-
+        JPanel bottomPanel = new JPanel();
         JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(new ActionListener() {
             @Override
@@ -179,7 +182,7 @@ public class Main {
                 initializeSubgrids();
             }
         });
-        p.add(clearButton);
+        bottomPanel.add(clearButton);
 
         JButton stepButton = new JButton("Step");
         stepButton.addActionListener(new ActionListener() {
@@ -188,7 +191,7 @@ public class Main {
                 stepAlgorithms();
             }
         });
-        p.add(stepButton);
+        bottomPanel.add(stepButton);
 
         JButton runButton = new JButton("Run");
         runButton.addActionListener(new ActionListener() {
@@ -197,18 +200,16 @@ public class Main {
                 running = true;
             }
         });
-        p.add(runButton);
+        bottomPanel.add(runButton);
 
         JButton resetButton = new JButton("Reset");
         resetButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                started = false;
-                running = false;
-                clearExploration();
+                reset();
             }
         });
-        p.add(resetButton);
+        bottomPanel.add(resetButton);
 
         JLabel sliderValue = new JLabel("X");
         JSlider slider = new JSlider(JSlider.HORIZONTAL, 1, MAX_COST, MAX_COST);
@@ -220,9 +221,9 @@ public class Main {
                 sliderValue.setText(selectedWeight == MAX_COST ? "X" : ("" + selectedWeight));
             }
         });
-        p.add(new JLabel("Cell Weight:"));
-        p.add(slider);
-        p.add(sliderValue);
+        bottomPanel.add(new JLabel("Cell Weight:"));
+        bottomPanel.add(slider);
+        bottomPanel.add(sliderValue);
 
         JButton toggleWeightsButton = new JButton("Toggle Cell Costs");
         toggleWeightsButton.addActionListener(new ActionListener() {
@@ -236,11 +237,65 @@ public class Main {
                 }
             }
         });
-        p.add(toggleWeightsButton);
+        bottomPanel.add(toggleWeightsButton);
 
-        frame.add(p, BorderLayout.SOUTH);
+        //////////////////////// RIGHT ////////////////////////
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(new BorderLayout());
+        JPanel rightSubPanel = new JPanel();
+        rightSubPanel.setLayout(new GridLayout(4, 1));
+        rightPanel.add(rightSubPanel, BorderLayout.NORTH);
+
+        // JButton genMaze = new JButton("Generate Maze");
+        // genMaze.addActionListener(new ActionListener() {
+        //     @Override
+        //     public void actionPerformed(ActionEvent e) {
+        //         System.out.println("TODO"); // TODO
+        //     }
+        // });
+        // rightSubPanel.add(genMaze);
+
+        JButton genRandom = new JButton("Generate Random");
+        genRandom.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+
+                for (int x = 0; x < GRID_WIDTH; x++) {
+                    for (int y = 0; y < GRID_HEIGHT; y++) {
+                        double r = Math.random();
+                        if (r < 1.0 / 4.0) {
+                            subgridsSet(x, y, WALL);
+                        } else if (r <= 2.0 / 4.0) {
+                            subgridsSet(x, y, EMPTY);
+                        } else {
+                            int randomWeight = WEIGHTED + 1 + (int) ((MAX_COST - 1) * Math.random());
+                            subgridsSet(x, y, randomWeight);
+                        }
+                    }
+                }
+                setStartPosition(1, 1);
+                setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT - 2);
+            }
+        });
+        rightSubPanel.add(genRandom);
+
+        // Assemble final frame
+        frame.add(rightPanel, BorderLayout.EAST);
+        frame.add(bottomPanel, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
+    }
+
+    /**
+     * Stops all currently running algorithms and clears any exploration visualization.
+     *
+     * @since v1.3.1
+     */
+    private static void reset() {
+        started = false;
+        running = false;
+        clearExploration();
     }
 
     /**
@@ -250,9 +305,33 @@ public class Main {
      * @param y    The y-coordinate of the line of text.
      * @param text The text to draw.
      */
-    public static void drawText(int x, int y, String text) {
+    private static void drawText(int x, int y, String text) {
         for (int i = 0; i < Math.min(text.length(), GRID_WIDTH); i++) {
             grid.set(x + i, y, ASCII_OFFSET + text.charAt(i));
+        }
+    }
+
+    /**
+     * Updates all subgrid labels with the path length and cost of the found solutions.
+     *
+     * @throws IllegalStateException If {@link #pathfinderData} is not initialized to have data for
+     *                               all pathfinders.
+     * @since v1.3.1
+     */
+    private static void updateSolutionLabels() {
+        if (pathfinderData.isEmpty()) {
+            throw new IllegalStateException("Pathfinder data not initialized.");
+        }
+
+        for (Point pathfinderPos : subgridPositions) {
+            // Clear previous text
+            for (int x = 0; x < GRID_WIDTH; x++) {
+                grid.set(pathfinderPos.x + x, pathfinderPos.y - 1, BG);
+            }
+
+            // Draw new text
+            PathfinderData data = pathfinderData.get(pathfinderPos);
+            drawText(pathfinderPos.x, pathfinderPos.y - 1, "Cost/Length/Steps: " + data.toString());
         }
     }
 
@@ -262,16 +341,38 @@ public class Main {
      * point will be located at 75% of the subgrid width. Both will be centered vertically in the
      * subgrid.
      */
-    public static void initializeSubgrids() {
+    private static void initializeSubgrids() {
         for (int x = 0; x < GRID_WIDTH; x++) {
             for (int y = 0; y < GRID_HEIGHT; y++) {
                 subgridsSet(x, y, EMPTY);
             }
         }
         clearExploration();
-        startLocalPos = new Point(GRID_WIDTH / 4, GRID_HEIGHT / 2);
-        targetLocalPos = new Point(GRID_WIDTH - GRID_WIDTH / 4, GRID_HEIGHT / 2);
+        setStartPosition(GRID_WIDTH / 4, GRID_HEIGHT / 2);
+        setTargetPosition(GRID_WIDTH - GRID_WIDTH / 4, GRID_HEIGHT / 2);
+    }
+
+    /**
+     * Sets the start point position of all subgrids.
+     *
+     * @param x The new x-coordinate of start point in local subgrid coordinates.
+     * @param y The new y-coordinate of start point in local subgrid coordinates.
+     * @since v1.3.1
+     */
+    private static void setStartPosition(int x, int y) {
+        startLocalPos = new Point(x, y);
         subgridsSet(startLocalPos, START);
+    }
+
+    /**
+     * Sets the target point position of all subgrids.
+     *
+     * @param x The new x-coordinate of target point in local subgrid coordinates.
+     * @param y The new y-coordinate of target point in local subgrid coordinates.
+     * @since v1.3.1
+     */
+    private static void setTargetPosition(int x, int y) {
+        targetLocalPos = new Point(x, y);
         subgridsSet(targetLocalPos, TARGET);
     }
 
@@ -279,9 +380,9 @@ public class Main {
      * Initializes all pathfinders with the currently set start and endpoints. All pathfinders are
      * also marked as not completed.
      */
-    public static void initializePathfinders() {
+    private static void initializePathfinders() {
         for (Point pathfinderPos : subgridPositions) {
-            pathfindersCompletion.put(pathfinderPos, false);
+            pathfinderData.put(pathfinderPos, new PathfinderData());
             Point globalStart = new Point(startLocalPos.x + pathfinderPos.x, startLocalPos.y + pathfinderPos.y);
             Point globalTarget = new Point(targetLocalPos.x + pathfinderPos.x, targetLocalPos.y + pathfinderPos.y);
             pathfinders.get(pathfinderPos).initialize(globalStart, globalTarget);
@@ -294,7 +395,7 @@ public class Main {
      *
      * @since v1.3
      */
-    public static void clearExploration() {
+    private static void clearExploration() {
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 grid.fill(1, 0);
@@ -309,14 +410,14 @@ public class Main {
      * @return True if the given value is that of a cell with a travel cost, false otherwise.
      * @since v1.3
      */
-    public static boolean isWeightedCell(int value) {
+    private static boolean isWeightedCell(int value) {
         return (value > WEIGHTED && value < WEIGHTED + MAX_COST);
     }
 
     /**
      * Main loop. Controls mouse input and algorithm progression.
      */
-    public static void run() {
+    private static void run() {
         while (true) {
             if (grid.isMouseDown()) {
                 Point mousePos = grid.getMousePosition();
@@ -374,8 +475,8 @@ public class Main {
                 stepAlgorithms();
 
                 boolean allDone = true;
-                for (Point p : pathfindersCompletion.keySet()) {
-                    if (!pathfindersCompletion.get(p)) {
+                for (Point p : pathfinderData.keySet()) {
+                    if (!pathfinderData.get(p).done) {
                         allDone = false;
                         break;
                     }
@@ -396,14 +497,18 @@ public class Main {
     /**
      * Advances all algorithms one iteration.
      */
-    public static void stepAlgorithms() {
+    private static void stepAlgorithms() {
         if (!started) {
             initializePathfinders();
         }
         started = true;
 
         for (Point pathfinderPos : subgridPositions) {
-            if (!pathfindersCompletion.get(pathfinderPos)) {
+            PathfinderData data = pathfinderData.get(pathfinderPos);
+
+            if (!data.done) {
+                data.steps++; // Increment step counter
+
                 Pathfinder pathfinder = pathfinders.get(pathfinderPos);
                 List<Point> exploredCells = pathfinder.step();
                 for (Point p : exploredCells) {
@@ -414,13 +519,22 @@ public class Main {
                 }
                 List<Point> solution = pathfinder.getSolution();
                 if (solution != null) {
+                    double cost = 0;
+
                     for (Point p : solution) {
                         int currentValue = grid.get(p);
                         if (currentValue != START && currentValue != TARGET) {
                             grid.set(1, p, SOLUTION);
+                            cost += getCost(p);
                         }
                     }
-                    pathfindersCompletion.put(pathfinderPos, true);
+                    cost++; // Add the final cost it takes to travel onto TARGET cell
+
+                    data.done = true;
+                    // Subtract 1 since the starting point shouldn't be included
+                    data.pathLength = solution.size() - 1;
+                    data.cost = cost;
+                    updateSolutionLabels();
                 }
             }
         }
@@ -432,7 +546,7 @@ public class Main {
      * @param globalPos The global grid coordinates to transform.
      * @return The given coordinates as local coordinates of subgrids.
      */
-    public static Point getLocalPos(Point globalPos) {
+    private static Point getLocalPos(Point globalPos) {
         Point localPos = new Point(globalPos);
         localPos.translate(-BORDER_SIZE, -BORDER_SIZE); // Remove border
         localPos.x = localPos.x % (GRID_WIDTH + GRID_MARGIN_X);
@@ -447,7 +561,7 @@ public class Main {
      * @param localPos The cell to set, in local subgrid coordinates.
      * @param value    The value to set the cell to.
      */
-    public static void subgridsSet(Point localPos, int value) {
+    private static void subgridsSet(Point localPos, int value) {
         subgridsSet(localPos.x, localPos.y, value);
     }
 
@@ -458,7 +572,7 @@ public class Main {
      * @param y     The y-coordinate of the cell to set, in local subgrid coordinates.
      * @param value The value to set the cell to.
      */
-    public static void subgridsSet(int x, int y, int value) {
+    private static void subgridsSet(int x, int y, int value) {
         for (Point p : subgridPositions) {
             grid.set(p.x + x, p.y + y, value);
         }
@@ -496,5 +610,28 @@ public class Main {
         int value = grid.get(p.x, p.y);
         int cost = isWeightedCell(value) ? (value - WEIGHTED + 1) : 1;
         return cost;
+    }
+
+    /**
+     * Holds the data about a loaded algorithm. This consists of whether the algorithm has found a
+     * path, the length of the solution path, its cost, and the number of steps it took to find it.
+     */
+    private static class PathfinderData {
+        public boolean done;
+        public int pathLength;
+        public double cost;
+        public int steps;
+
+        public PathfinderData() {
+            this.done = false;
+            this.pathLength = 0;
+            this.cost = 0.0;
+            this.steps = 0;
+        }
+
+        @Override
+        public String toString() {
+            return ((int) this.cost) + "/" + this.pathLength + "/" + this.steps;
+        }
     }
 }

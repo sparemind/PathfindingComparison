@@ -90,7 +90,7 @@ public class AStar implements Pathfinder {
                 exploredCells.add(neighbor.point);
 
 
-                double tentativeGScore = current.gScore + 1;
+                double tentativeGScore = current.gScore + Main.getCost(neighbor.point);
                 if (tentativeGScore < neighbor.gScore) {
                     // This is a better path
                     neighbor.cameFrom = current;

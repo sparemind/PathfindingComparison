@@ -1,6 +1,10 @@
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Point;
@@ -21,7 +25,7 @@ import java.util.Map;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.2.1
+ * @version v1.3
  */
 public class Main {
     /**
@@ -56,6 +60,14 @@ public class Main {
      * Number of cells padding the frame border. Must be &gt;= 1.
      */
     public static final int BORDER_SIZE = 3;
+    /**
+     * Maximum traversal cost that a cell can be set to.
+     */
+    public static final int MAX_COST = 10;
+    /**
+     * Minimum int-8 RGB value of a weighted cell.
+     */
+    public static final int WEIGHTED_MIN_COLOR = 100;
 
     /**
      * Delay between each step in milliseconds.
@@ -66,6 +78,7 @@ public class Main {
      * Value added to ASCII value to get corresponding grid value.
      */
     public static final int ASCII_OFFSET = 1000;
+    // Note that value 0 is reserved for the "transparent cell"
     public static final int BG = 1; // Background
     public static final int EMPTY = 2; // Empty grid space
     public static final int WALL = 3; // Wall obstacle
@@ -73,10 +86,13 @@ public class Main {
     public static final int TARGET = 5; // Pathfinding end point
     public static final int EXPLORED = 6; // Pathfinding explored cell
     public static final int SOLUTION = 7; // Final solution path
+    public static final int WEIGHTED = 100; // First value of cells with a travel cost
 
     private static SimpleGrid grid;
     private static boolean isMouseDown = false;
-    private static int currentlyClicked = -1;
+    private static int initialClick = -1;
+    private static int selectedWeight = MAX_COST; // If equal to MAX_COST, creates walls instead of weighted cells
+    private static boolean showingWeights = false;
     private static boolean started = false;
     private static boolean running = false;
     private static Point[] subgridPositions = new Point[GRIDS_HORZ * GRIDS_VERT];
@@ -91,6 +107,7 @@ public class Main {
         int totalHeight = (GRID_HEIGHT * GRIDS_VERT) + (GRIDS_VERT - 1) * GRID_MARGIN_Y + (BORDER_SIZE * 2);
         grid = new SimpleGrid(totalWidth, totalHeight, CELL_SIZE, 1, "Pathfinding Algorithm Comparison");
         grid.setGridlineColor(Color.GRAY);
+        grid.addLayer(); // Layer 1 shows the explored cells and solution path
 
         grid.setColor(BG, Color.GRAY);
         grid.setColor(EMPTY, Color.WHITE);
@@ -103,6 +120,12 @@ public class Main {
             grid.setText(ASCII_OFFSET + i, (char) i);
             grid.setTextColor(ASCII_OFFSET + i, Color.WHITE);
             grid.setColor(ASCII_OFFSET + i, Color.GRAY);
+        }
+        for (int i = 1; i < MAX_COST; i++) {
+            int value = WEIGHTED + i;
+            int increment = (255 - WEIGHTED_MIN_COLOR) / MAX_COST;
+            grid.setColor(value, new Color(255, 255 - i * increment, 255 - i * increment));
+            grid.setTextColor(value, Color.BLACK);
         }
 
         // Calculate all subgrid positions
@@ -129,7 +152,21 @@ public class Main {
         pathfinders.put(subgridPositions[3], new StrongAStar());
         initializePathfinders();
 
+        // Initialize GUI and grid labels
+        initializeGUI();
+        for (Point pathfinderPos : subgridPositions) {
+            drawText(pathfinderPos.x, pathfinderPos.y - 1, pathfinders.get(pathfinderPos).toString());
+        }
 
+        run();
+    }
+
+    /**
+     * Initializes the GUI button and slider controls and adds them to the SimpleGrid frame.
+     *
+     * @since v1.3
+     */
+    public static void initializeGUI() {
         JFrame frame = grid.getFrame();
         JPanel p = new JPanel();
 
@@ -142,6 +179,8 @@ public class Main {
                 initializeSubgrids();
             }
         });
+        p.add(clearButton);
+
         JButton stepButton = new JButton("Step");
         stepButton.addActionListener(new ActionListener() {
             @Override
@@ -149,6 +188,8 @@ public class Main {
                 stepAlgorithms();
             }
         });
+        p.add(stepButton);
+
         JButton runButton = new JButton("Run");
         runButton.addActionListener(new ActionListener() {
             @Override
@@ -156,35 +197,50 @@ public class Main {
                 running = true;
             }
         });
+        p.add(runButton);
+
         JButton resetButton = new JButton("Reset");
         resetButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 started = false;
                 running = false;
-                for (int x = 0; x < grid.getWidth(); x++) {
-                    for (int y = 0; y < grid.getHeight(); y++) {
-                        int value = grid.get(x, y);
-                        if (value == EXPLORED || value == SOLUTION) {
-                            grid.set(x, y, EMPTY);
-                        }
-                    }
+                clearExploration();
+            }
+        });
+        p.add(resetButton);
+
+        JLabel sliderValue = new JLabel("X");
+        JSlider slider = new JSlider(JSlider.HORIZONTAL, 1, MAX_COST, MAX_COST);
+        slider.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                JSlider source = (JSlider) e.getSource();
+                selectedWeight = source.getValue();
+                sliderValue.setText(selectedWeight == MAX_COST ? "X" : ("" + selectedWeight));
+            }
+        });
+        p.add(new JLabel("Cell Weight:"));
+        p.add(slider);
+        p.add(sliderValue);
+
+        JButton toggleWeightsButton = new JButton("Toggle Cell Costs");
+        toggleWeightsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showingWeights = !showingWeights;
+
+                for (int i = 1; i < MAX_COST; i++) {
+                    char display = showingWeights ? ("" + i).charAt(0) : '\0';
+                    grid.setText(WEIGHTED + i, display);
                 }
             }
         });
-        p.add(clearButton);
-        p.add(stepButton);
-        p.add(runButton);
-        p.add(resetButton);
+        p.add(toggleWeightsButton);
+
         frame.add(p, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
-
-        for (Point pathfinderPos : subgridPositions) {
-            drawText(pathfinderPos.x, pathfinderPos.y - 1, pathfinders.get(pathfinderPos).toString());
-        }
-
-        run();
     }
 
     /**
@@ -212,6 +268,7 @@ public class Main {
                 subgridsSet(x, y, EMPTY);
             }
         }
+        clearExploration();
         startLocalPos = new Point(GRID_WIDTH / 4, GRID_HEIGHT / 2);
         targetLocalPos = new Point(GRID_WIDTH - GRID_WIDTH / 4, GRID_HEIGHT / 2);
         subgridsSet(startLocalPos, START);
@@ -233,6 +290,30 @@ public class Main {
     }
 
     /**
+     * Clears the grid layer showing the pathfinder algorithms' exploration and solutions.
+     *
+     * @since v1.3
+     */
+    public static void clearExploration() {
+        for (int x = 0; x < grid.getWidth(); x++) {
+            for (int y = 0; y < grid.getHeight(); y++) {
+                grid.fill(1, 0);
+            }
+        }
+    }
+
+    /**
+     * Returns whether the given value is that of a cell with a travel cost.
+     *
+     * @param value The value to check.
+     * @return True if the given value is that of a cell with a travel cost, false otherwise.
+     * @since v1.3
+     */
+    public static boolean isWeightedCell(int value) {
+        return (value > WEIGHTED && value < WEIGHTED + MAX_COST);
+    }
+
+    /**
      * Main loop. Controls mouse input and algorithm progression.
      */
     public static void run() {
@@ -247,36 +328,40 @@ public class Main {
                 // Mouse pressed down for the first time
                 if (!isMouseDown) {
                     isMouseDown = true;
-                    currentlyClicked = grid.get(mousePos);
+                    initialClick = grid.get(mousePos);
                 } else { // Mouse already down
                     int currentlyOver = grid.get(mousePos);
-                    switch (currentlyClicked) {
-                        case EMPTY: // Make walls
+
+                    if (initialClick == START) {
+                        // Drag start point
+                        if (currentlyOver == EMPTY) {
+                            subgridsSet(startLocalPos, EMPTY);
+                            subgridsSet(mouseLocalPos, START);
+                            startLocalPos = mouseLocalPos;
+                        }
+                    } else if (initialClick == TARGET) {
+                        // Drag target point
+                        if (currentlyOver == EMPTY) {
+                            subgridsSet(targetLocalPos, EMPTY);
+                            subgridsSet(mouseLocalPos, TARGET);
+                            targetLocalPos = mouseLocalPos;
+                        }
+                    } else if (selectedWeight == MAX_COST) {
+                        if (initialClick == EMPTY) {
+                            // Make walls
                             if (currentlyOver == EMPTY) {
                                 subgridsSet(mouseLocalPos, WALL);
                             }
-                            break;
-                        case WALL: // Erase walls
-                            if (currentlyOver == WALL) {
+                        } else if (initialClick == WALL || isWeightedCell(initialClick)) {
+                            // Erase walls
+                            if (currentlyOver == WALL || isWeightedCell(currentlyOver)) {
                                 subgridsSet(mouseLocalPos, EMPTY);
                             }
-                            break;
-                        case START: // Drag start point
-                            if (currentlyOver == EMPTY) {
-                                subgridsSet(startLocalPos, EMPTY);
-                                subgridsSet(mouseLocalPos, START);
-                                startLocalPos = mouseLocalPos;
-                            }
-                            break;
-                        case TARGET: // Drag target point
-                            if (currentlyOver == EMPTY) {
-                                subgridsSet(targetLocalPos, EMPTY);
-                                subgridsSet(mouseLocalPos, TARGET);
-                                targetLocalPos = mouseLocalPos;
-                            }
-                            break;
-                        default:
-                            break;
+                        }
+                    } else {
+                        if (currentlyOver == EMPTY || isWeightedCell(currentlyOver)) {
+                            subgridsSet(mouseLocalPos, WEIGHTED + selectedWeight);
+                        }
                     }
                 }
             } else {
@@ -319,20 +404,20 @@ public class Main {
 
         for (Point pathfinderPos : subgridPositions) {
             if (!pathfindersCompletion.get(pathfinderPos)) {
-                Pathfinder AStar = pathfinders.get(pathfinderPos);
-                List<Point> exploredCells = AStar.step();
+                Pathfinder pathfinder = pathfinders.get(pathfinderPos);
+                List<Point> exploredCells = pathfinder.step();
                 for (Point p : exploredCells) {
                     int currentValue = grid.get(p);
                     if (currentValue != START && currentValue != TARGET) {
-                        grid.set(p, EXPLORED);
+                        grid.set(1, p, EXPLORED);
                     }
                 }
-                List<Point> solution = AStar.getSolution();
+                List<Point> solution = pathfinder.getSolution();
                 if (solution != null) {
                     for (Point p : solution) {
                         int currentValue = grid.get(p);
                         if (currentValue != START && currentValue != TARGET) {
-                            grid.set(p, SOLUTION);
+                            grid.set(1, p, SOLUTION);
                         }
                     }
                     pathfindersCompletion.put(pathfinderPos, true);
@@ -391,6 +476,25 @@ public class Main {
         }
 
         int value = grid.get(p.x, p.y);
-        return value == EMPTY || value == TARGET;
+        return value == EMPTY || value == TARGET || isWeightedCell(value);
+    }
+
+    /**
+     * Returns the cost to travel to the given cell.
+     *
+     * @param p The coordinates of the cell to get the travel cost of.
+     * @return The cost to travel to the cell at the given coordinates.
+     * @throws IllegalArgumentException If the given coordinates are not those of a cell in the
+     *                                  grid.
+     * @since v1.3
+     */
+    public static int getCost(Point p) {
+        if (grid.isOOB(p.x, p.y)) {
+            throw new IllegalArgumentException("Given coordinates must specify a cell in the grid.");
+        }
+
+        int value = grid.get(p.x, p.y);
+        int cost = isWeightedCell(value) ? (value - WEIGHTED + 1) : 1;
+        return cost;
     }
 }

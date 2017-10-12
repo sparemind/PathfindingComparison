@@ -18,7 +18,9 @@ running, advance each algorithm a single step, or clear/reset the grids.
 * Comparing multiple algorithms side-by-side in one window
 * Grid editing: Placing obstacles and moving start and target points to create custom scenarios
 * Weighted graphs: Adding a travel cost to certain cells
-* Preset and random grid setups
+* Preset setups:
+    * Mazes
+    * Randomized grids
 * Step-by-step viewing of algorithm procedure
 
 **Included Algorithms:**

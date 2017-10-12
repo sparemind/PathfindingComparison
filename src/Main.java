@@ -11,6 +11,8 @@ import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +28,7 @@ import java.util.Map;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.3.1
+ * @version v1.3.2
  */
 // TODO add slider for run speed
 public class Main {
@@ -246,14 +248,28 @@ public class Main {
         rightSubPanel.setLayout(new GridLayout(4, 1));
         rightPanel.add(rightSubPanel, BorderLayout.NORTH);
 
-        // JButton genMaze = new JButton("Generate Maze");
-        // genMaze.addActionListener(new ActionListener() {
-        //     @Override
-        //     public void actionPerformed(ActionEvent e) {
-        //         System.out.println("TODO"); // TODO
-        //     }
-        // });
-        // rightSubPanel.add(genMaze);
+        JButton genMaze = new JButton("Generate Maze");
+        genMaze.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+                initializeSubgrids();
+
+                // Fill with all walls
+                for (int x = 0; x < GRID_WIDTH; x++) {
+                    for (int y = 0; y < GRID_HEIGHT; y++) {
+                        subgridsSet(x, y, WALL);
+                    }
+                }
+
+                generateMaze(0, 0);
+
+                // Start in top left corner, target in bottom right
+                setStartPosition(0, 0);
+                setTargetPosition(GRID_WIDTH - 1, GRID_HEIGHT - 1);
+            }
+        });
+        rightSubPanel.add(genMaze);
 
         JButton genRandom = new JButton("Generate Random");
         genRandom.addActionListener(new ActionListener() {
@@ -274,6 +290,8 @@ public class Main {
                         }
                     }
                 }
+
+                // Start in top left corner, target in bottom right.
                 setStartPosition(1, 1);
                 setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT - 2);
             }
@@ -285,6 +303,48 @@ public class Main {
         frame.add(bottomPanel, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
+    }
+
+    /**
+     * Creates an identical maze in all subgrids. Subgrids must be filled with all WALLS prior to
+     * this method being called, or no maze will be produced. The created maze will have no cycles.
+     *
+     * @param x The x-coordinate to generate the maze from.
+     * @param y The y-coordinate to generate the maze from.
+     * @since v1.3.2
+     */
+    private static void generateMaze(int x, int y) {
+        // Check the value to make sure we're still in a wall.
+        // (Using subgrid 1 to check)
+        if (grid.get(BORDER_SIZE + x, BORDER_SIZE + y) != WALL) {
+            return;
+        }
+        subgridsSet(x, y, EMPTY);
+
+        List<Point> directions = new ArrayList<>();
+        directions.add(new Point(1, 0));
+        directions.add(new Point(-1, 0));
+        directions.add(new Point(0, 1));
+        directions.add(new Point(0, -1));
+        Collections.shuffle(directions);
+
+        for (Point direction : directions) {
+            boolean canTunnel = false;
+            Point p1 = new Point(x + direction.x, y + direction.y);
+            if (grid.get(BORDER_SIZE + p1.x, BORDER_SIZE + p1.y) == WALL) {
+                Point p2 = new Point(p1);
+                p2.translate(direction.x, direction.y);
+
+                if (grid.get(BORDER_SIZE + p2.x, BORDER_SIZE + p2.y) == WALL) {
+                    subgridsSet(p1.x, p1.y, EMPTY);
+                    canTunnel = true;
+                }
+            }
+
+            if (canTunnel) {
+                generateMaze(x + direction.x * 2, y + direction.y * 2);
+            }
+        }
     }
 
     /**

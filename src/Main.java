@@ -28,7 +28,7 @@ import java.util.Map;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.3.2
+ * @version v1.3.3
  */
 // TODO add slider for run speed
 public class Main {
@@ -65,7 +65,7 @@ public class Main {
      */
     public static final int BORDER_SIZE = 3;
     /**
-     * Maximum traversal cost that a cell can be set to.
+     * 1 more than the maximum traversal cost that a cell can be set to.
      */
     public static final int MAX_COST = 10;
     /**
@@ -245,10 +245,10 @@ public class Main {
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BorderLayout());
         JPanel rightSubPanel = new JPanel();
-        rightSubPanel.setLayout(new GridLayout(4, 1));
+        rightSubPanel.setLayout(new GridLayout(10, 1));
         rightPanel.add(rightSubPanel, BorderLayout.NORTH);
 
-        JButton genMaze = new JButton("Generate Maze");
+        JButton genMaze = new JButton("Maze");
         genMaze.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -271,7 +271,31 @@ public class Main {
         });
         rightSubPanel.add(genMaze);
 
-        JButton genRandom = new JButton("Generate Random");
+        JButton genWeightedMaze = new JButton("Weighted Maze");
+        genWeightedMaze.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+                initializeSubgrids();
+
+                // Fill with all walls
+                for (int x = 0; x < GRID_WIDTH; x++) {
+                    for (int y = 0; y < GRID_HEIGHT; y++) {
+                        subgridsSet(x, y, WALL);
+                    }
+                }
+
+                generateMaze(0, 0);
+                randomlyWeightWalls(MAX_COST / 2);
+
+                // Start in top left corner, target in bottom right
+                setStartPosition(0, 0);
+                setTargetPosition(GRID_WIDTH - 1, GRID_HEIGHT - 1);
+            }
+        });
+        rightSubPanel.add(genWeightedMaze);
+
+        JButton genRandom = new JButton("Randomized");
         genRandom.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -297,6 +321,51 @@ public class Main {
             }
         });
         rightSubPanel.add(genRandom);
+
+        JButton genGradient = new JButton("Gradient");
+        genGradient.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+
+                for (int x = 0; x < GRID_WIDTH; x++) {
+                    for (int y = 0; y < GRID_HEIGHT; y++) {
+                        // The weight of the cell. Weight is max in the y-center, decreasing going out
+                        double diff = (1 - (Math.abs(y - GRID_HEIGHT / 2.0) / (GRID_HEIGHT / 2.0))) * (MAX_COST - 1);
+                        int finalWeight = WEIGHTED + 1 + (int) diff;
+                        subgridsSet(x, y, finalWeight);
+                    }
+                }
+
+                // Start at left center, target at right center.
+                setStartPosition(1, GRID_HEIGHT / 2);
+                setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT / 2);
+            }
+        });
+        rightSubPanel.add(genGradient);
+
+        JButton genRandomGradient = new JButton("Randomized Gradient");
+        genRandomGradient.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+
+                for (int x = 0; x < GRID_WIDTH; x++) {
+                    for (int y = 0; y < GRID_HEIGHT; y++) {
+                        // The weight of the cell. Weight is max in the y-center, decreasing going out
+                        double diff = (1 - (Math.abs(y - GRID_HEIGHT / 2.0) / (GRID_HEIGHT / 2.0))) * (MAX_COST - 1);
+                        // Randomly subtract some amount from this weight
+                        int randomWeight = WEIGHTED + 1 + (int) (diff - ((diff) * Math.random()));
+                        subgridsSet(x, y, randomWeight);
+                    }
+                }
+
+                // Start at left center, target at right center.
+                setStartPosition(1, GRID_HEIGHT / 2);
+                setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT / 2);
+            }
+        });
+        rightSubPanel.add(genRandomGradient);
 
         // Assemble final frame
         frame.add(rightPanel, BorderLayout.EAST);
@@ -343,6 +412,24 @@ public class Main {
 
             if (canTunnel) {
                 generateMaze(x + direction.x * 2, y + direction.y * 2);
+            }
+        }
+    }
+
+    /**
+     * Replaces the walls in all subgrids with randomly weighted cells.
+     *
+     * @param min The minimum cell weight that can be randomly assigned.
+     * @since v1.3.3
+     */
+    private static void randomlyWeightWalls(int min) {
+        min--;
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            for (int y = 0; y < GRID_HEIGHT; y++) {
+                if (grid.get(BORDER_SIZE + x, BORDER_SIZE + y) == WALL) {
+                    int randomWeight = WEIGHTED + 1 + (int) (min + (MAX_COST - 1 - min) * Math.random());
+                    subgridsSet(x, y, randomWeight);
+                }
             }
         }
     }

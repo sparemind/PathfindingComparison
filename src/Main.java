@@ -28,7 +28,7 @@ import java.util.Map;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.3.3
+ * @version v1.3.4
  */
 // TODO add slider for run speed
 public class Main {
@@ -227,26 +227,13 @@ public class Main {
         bottomPanel.add(slider);
         bottomPanel.add(sliderValue);
 
-        JButton toggleWeightsButton = new JButton("Toggle Cell Costs");
-        toggleWeightsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showingWeights = !showingWeights;
-
-                for (int i = 1; i < MAX_COST; i++) {
-                    char display = showingWeights ? ("" + i).charAt(0) : '\0';
-                    grid.setText(WEIGHTED + i, display);
-                }
-            }
-        });
-        bottomPanel.add(toggleWeightsButton);
-
-        //////////////////////// RIGHT ////////////////////////
+        //////////////////////// RIGHT TOP (Presets) ////////////////////////
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BorderLayout());
-        JPanel rightSubPanel = new JPanel();
-        rightSubPanel.setLayout(new GridLayout(10, 1));
-        rightPanel.add(rightSubPanel, BorderLayout.NORTH);
+
+        JPanel rightTopPanel = new JPanel();
+        rightTopPanel.setLayout(new GridLayout(10, 1));
+        rightPanel.add(rightTopPanel, BorderLayout.NORTH);
 
         JButton genMaze = new JButton("Maze");
         genMaze.addActionListener(new ActionListener() {
@@ -269,7 +256,7 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 1, GRID_HEIGHT - 1);
             }
         });
-        rightSubPanel.add(genMaze);
+        rightTopPanel.add(genMaze);
 
         JButton genWeightedMaze = new JButton("Weighted Maze");
         genWeightedMaze.addActionListener(new ActionListener() {
@@ -293,7 +280,7 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 1, GRID_HEIGHT - 1);
             }
         });
-        rightSubPanel.add(genWeightedMaze);
+        rightTopPanel.add(genWeightedMaze);
 
         JButton genRandom = new JButton("Randomized");
         genRandom.addActionListener(new ActionListener() {
@@ -320,7 +307,7 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT - 2);
             }
         });
-        rightSubPanel.add(genRandom);
+        rightTopPanel.add(genRandom);
 
         JButton genGradient = new JButton("Gradient");
         genGradient.addActionListener(new ActionListener() {
@@ -342,7 +329,7 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT / 2);
             }
         });
-        rightSubPanel.add(genGradient);
+        rightTopPanel.add(genGradient);
 
         JButton genRandomGradient = new JButton("Randomized Gradient");
         genRandomGradient.addActionListener(new ActionListener() {
@@ -365,7 +352,60 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT / 2);
             }
         });
-        rightSubPanel.add(genRandomGradient);
+        rightTopPanel.add(genRandomGradient);
+
+        //////////////////////// RIGHT BOTTOM (Editing Functions) ////////////////////////
+        JPanel rightBottomPanel = new JPanel();
+        rightBottomPanel.setLayout(new GridLayout(3, 1));
+        rightPanel.add(rightBottomPanel, BorderLayout.SOUTH);
+
+        JButton wallFill = new JButton("Fill With Walls");
+        wallFill.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+
+                for (int x = 0; x < GRID_WIDTH; x++) {
+                    for (int y = 0; y < GRID_HEIGHT; y++) {
+                        if (grid.get(BORDER_SIZE + x, BORDER_SIZE + y) == EMPTY) {
+                            subgridsSet(x, y, WALL);
+                        }
+                    }
+                }
+            }
+        });
+        rightBottomPanel.add(wallFill);
+
+        JButton clearWeights = new JButton("Clear Weights");
+        clearWeights.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+
+                for (int x = 0; x < GRID_WIDTH; x++) {
+                    for (int y = 0; y < GRID_HEIGHT; y++) {
+                        if (isWeightedCell(grid.get(BORDER_SIZE + x, BORDER_SIZE + y))) {
+                            subgridsSet(x, y, EMPTY);
+                        }
+                    }
+                }
+            }
+        });
+        rightBottomPanel.add(clearWeights);
+
+        JButton toggleWeightsButton = new JButton("Toggle Cell Costs");
+        toggleWeightsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showingWeights = !showingWeights;
+
+                for (int i = 1; i < MAX_COST; i++) {
+                    char display = showingWeights ? ("" + i).charAt(0) : '\0';
+                    grid.setText(WEIGHTED + i, display);
+                }
+            }
+        });
+        rightBottomPanel.add(toggleWeightsButton);
 
         // Assemble final frame
         frame.add(rightPanel, BorderLayout.EAST);

@@ -3,19 +3,25 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * A visual side-by-side comparison of common pathfinding algorithms.
@@ -28,9 +34,8 @@ import java.util.Map;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.3.4
+ * @version v1.4
  */
-// TODO add slider for run speed
 public class Main {
     /**
      * Width of each sub grid in number of cells.
@@ -74,9 +79,13 @@ public class Main {
     public static final int WEIGHTED_MIN_COLOR = 100;
 
     /**
-     * Delay between each step in milliseconds.
+     * Maximum settable delay between each step in milliseconds.
      */
-    public static final int STEP_DELAY = 12;
+    public static final int MAX_DELAY = 100;
+    /**
+     * Default delay between each step in milliseconds.
+     */
+    public static final int DEFAULT_STEP_DELAY = 12;
 
     /**
      * Value added to ASCII value to get corresponding grid value.
@@ -96,9 +105,12 @@ public class Main {
     private static boolean isMouseDown = false;
     private static int initialClick = -1;
     private static int selectedWeight = MAX_COST; // If equal to MAX_COST, creates walls instead of weighted cells
+    private static int selectedDelay = DEFAULT_STEP_DELAY;
     private static boolean showingWeights = false;
     private static boolean started = false;
     private static boolean running = false;
+    private static Integer seed = null;
+    private static boolean seedFieldClicked = false;
     private static Point[] subgridPositions = new Point[GRIDS_HORZ * GRIDS_VERT];
     private static Point startLocalPos;
     private static Point targetLocalPos;
@@ -175,6 +187,19 @@ public class Main {
         //////////////////////// BOTTOM ////////////////////////
         JFrame frame = grid.getFrame();
         JPanel bottomPanel = new JPanel();
+
+        bottomPanel.add(new JLabel("Slow"));
+        JSlider speedSlider = new JSlider(JSlider.HORIZONTAL, 0, MAX_DELAY, MAX_DELAY - DEFAULT_STEP_DELAY);
+        speedSlider.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                JSlider source = (JSlider) e.getSource();
+                selectedDelay = MAX_DELAY - source.getValue();
+            }
+        });
+        bottomPanel.add(speedSlider);
+        bottomPanel.add(new JLabel("Fast"));
+
         JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(new ActionListener() {
             @Override
@@ -213,19 +238,19 @@ public class Main {
         });
         bottomPanel.add(resetButton);
 
-        JLabel sliderValue = new JLabel("X");
-        JSlider slider = new JSlider(JSlider.HORIZONTAL, 1, MAX_COST, MAX_COST);
-        slider.addChangeListener(new ChangeListener() {
+        JLabel weightSliderValue = new JLabel("X");
+        JSlider weightSlider = new JSlider(JSlider.HORIZONTAL, 1, MAX_COST, MAX_COST);
+        weightSlider.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
                 JSlider source = (JSlider) e.getSource();
                 selectedWeight = source.getValue();
-                sliderValue.setText(selectedWeight == MAX_COST ? "X" : ("" + selectedWeight));
+                weightSliderValue.setText(selectedWeight == MAX_COST ? "X" : ("" + selectedWeight));
             }
         });
         bottomPanel.add(new JLabel("Cell Weight:"));
-        bottomPanel.add(slider);
-        bottomPanel.add(sliderValue);
+        bottomPanel.add(weightSlider);
+        bottomPanel.add(weightSliderValue);
 
         //////////////////////// RIGHT TOP (Presets) ////////////////////////
         JPanel rightPanel = new JPanel();
@@ -249,7 +274,7 @@ public class Main {
                     }
                 }
 
-                generateMaze(0, 0);
+                generateMaze(0, 0, getRandom());
 
                 // Start in top left corner, target in bottom right
                 setStartPosition(0, 0);
@@ -272,7 +297,7 @@ public class Main {
                     }
                 }
 
-                generateMaze(0, 0);
+                generateMaze(0, 0, getRandom());
                 randomlyWeightWalls(MAX_COST / 2);
 
                 // Start in top left corner, target in bottom right
@@ -287,16 +312,17 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 reset();
+                Random rand = getRandom();
 
                 for (int x = 0; x < GRID_WIDTH; x++) {
                     for (int y = 0; y < GRID_HEIGHT; y++) {
-                        double r = Math.random();
+                        double r = rand.nextDouble();
                         if (r < 1.0 / 4.0) {
                             subgridsSet(x, y, WALL);
                         } else if (r <= 2.0 / 4.0) {
                             subgridsSet(x, y, EMPTY);
                         } else {
-                            int randomWeight = WEIGHTED + 1 + (int) ((MAX_COST - 1) * Math.random());
+                            int randomWeight = WEIGHTED + 1 + (int) ((MAX_COST - 1) * rand.nextDouble());
                             subgridsSet(x, y, randomWeight);
                         }
                     }
@@ -336,13 +362,14 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 reset();
+                Random rand = getRandom();
 
                 for (int x = 0; x < GRID_WIDTH; x++) {
                     for (int y = 0; y < GRID_HEIGHT; y++) {
                         // The weight of the cell. Weight is max in the y-center, decreasing going out
                         double diff = (1 - (Math.abs(y - GRID_HEIGHT / 2.0) / (GRID_HEIGHT / 2.0))) * (MAX_COST - 1);
                         // Randomly subtract some amount from this weight
-                        int randomWeight = WEIGHTED + 1 + (int) (diff - ((diff) * Math.random()));
+                        int randomWeight = WEIGHTED + 1 + (int) (diff - ((diff) * rand.nextDouble()));
                         subgridsSet(x, y, randomWeight);
                     }
                 }
@@ -356,7 +383,7 @@ public class Main {
 
         //////////////////////// RIGHT BOTTOM (Editing Functions) ////////////////////////
         JPanel rightBottomPanel = new JPanel();
-        rightBottomPanel.setLayout(new GridLayout(3, 1));
+        rightBottomPanel.setLayout(new GridLayout(4, 1));
         rightPanel.add(rightBottomPanel, BorderLayout.SOUTH);
 
         JButton wallFill = new JButton("Fill With Walls");
@@ -407,6 +434,46 @@ public class Main {
         });
         rightBottomPanel.add(toggleWeightsButton);
 
+        JTextField seedField = new JTextField("Seed (Leave blank for none)");
+        seedField.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                // If this is the first time the field has been clicked, remove
+                // the instruction text.
+                if (!seedFieldClicked) {
+                    seedFieldClicked = true;
+                    seedField.setText("");
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+
+            }
+        });
+        seedField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                changedUpdate(e);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                changedUpdate(e);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                String text = seedField.getText();
+                if (text.isEmpty()) {
+                    seed = null;
+                } else {
+                    seed = text.hashCode();
+                }
+            }
+        });
+        rightBottomPanel.add(seedField);
+
         // Assemble final frame
         frame.add(rightPanel, BorderLayout.EAST);
         frame.add(bottomPanel, BorderLayout.SOUTH);
@@ -418,11 +485,12 @@ public class Main {
      * Creates an identical maze in all subgrids. Subgrids must be filled with all WALLS prior to
      * this method being called, or no maze will be produced. The created maze will have no cycles.
      *
-     * @param x The x-coordinate to generate the maze from.
-     * @param y The y-coordinate to generate the maze from.
+     * @param x    The x-coordinate to generate the maze from.
+     * @param y    The y-coordinate to generate the maze from.
+     * @param rand The source of randomness used to generate the maze.
      * @since v1.3.2
      */
-    private static void generateMaze(int x, int y) {
+    private static void generateMaze(int x, int y, Random rand) {
         // Check the value to make sure we're still in a wall.
         // (Using subgrid 1 to check)
         if (grid.get(BORDER_SIZE + x, BORDER_SIZE + y) != WALL) {
@@ -435,7 +503,7 @@ public class Main {
         directions.add(new Point(-1, 0));
         directions.add(new Point(0, 1));
         directions.add(new Point(0, -1));
-        Collections.shuffle(directions);
+        Collections.shuffle(directions, rand);
 
         for (Point direction : directions) {
             boolean canTunnel = false;
@@ -451,7 +519,7 @@ public class Main {
             }
 
             if (canTunnel) {
-                generateMaze(x + direction.x * 2, y + direction.y * 2);
+                generateMaze(x + direction.x * 2, y + direction.y * 2, rand);
             }
         }
     }
@@ -463,11 +531,12 @@ public class Main {
      * @since v1.3.3
      */
     private static void randomlyWeightWalls(int min) {
+        Random rand = getRandom();
         min--;
         for (int x = 0; x < GRID_WIDTH; x++) {
             for (int y = 0; y < GRID_HEIGHT; y++) {
                 if (grid.get(BORDER_SIZE + x, BORDER_SIZE + y) == WALL) {
-                    int randomWeight = WEIGHTED + 1 + (int) (min + (MAX_COST - 1 - min) * Math.random());
+                    int randomWeight = WEIGHTED + 1 + (int) (min + (MAX_COST - 1 - min) * rand.nextDouble());
                     subgridsSet(x, y, randomWeight);
                 }
             }
@@ -673,7 +742,7 @@ public class Main {
                 }
 
                 try {
-                    Thread.sleep(STEP_DELAY);
+                    Thread.sleep(selectedDelay);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -763,6 +832,20 @@ public class Main {
         for (Point p : subgridPositions) {
             grid.set(p.x + x, p.y + y, value);
         }
+    }
+
+    /**
+     * Returns a Random number generator seeded with the user specified seed if one exists. If none
+     * is specified, the generator is seeded with a default random seed of its own choosing.
+     *
+     * @return Random number generator, seeded with the user specified seed if one exists.
+     */
+    private static Random getRandom() {
+        Random rand = new Random();
+        if (seed != null) {
+            rand.setSeed(seed);
+        }
+        return rand;
     }
 
     /**

@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * Breadth First Search Algorithm
  */
-public class BFS implements Pathfinder {
+public class BreadthFirstSearch implements Pathfinder {
     private Point target;
     private Queue<Point> openSet;
     private Set<Point> closedSet;
@@ -39,7 +39,7 @@ public class BFS implements Pathfinder {
             Point current = this.openSet.remove();
 
             // Try again with next cell if this one was already visited.
-            // NOTE: Not part of the actual BFS. This just prevents a step() call from
+            // NOTE: Not part of the actual search. This just prevents a step() call from
             // being wasted and keeps the algorithm on an accurate pace with the others.
             if (this.closedSet.contains(current)) {
                 return step();

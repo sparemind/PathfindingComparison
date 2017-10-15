@@ -1,4 +1,5 @@
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -19,9 +20,11 @@ import java.awt.event.FocusListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * A visual side-by-side comparison of common pathfinding algorithms.
@@ -31,10 +34,11 @@ import java.util.Random;
  * <li>Dijkstra's Algorithm</li>
  * <li>A* Search (2 variants)</li>
  * <li>Breadth First Search</li>
+ * <li>Greedy Best First Search</li>
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.4
+ * @version v1.5
  */
 public class Main {
     /**
@@ -112,9 +116,11 @@ public class Main {
     private static Integer seed = null;
     private static boolean seedFieldClicked = false;
     private static Point[] subgridPositions = new Point[GRIDS_HORZ * GRIDS_VERT];
+    private static JComboBox[] algorithmSelectors = new JComboBox[GRIDS_HORZ * GRIDS_VERT];
     private static Point startLocalPos;
     private static Point targetLocalPos;
 
+    private static List<Pathfinder> loadedPathfinders = new ArrayList<>();
     private static Map<Point, Pathfinder> pathfinders = new HashMap<>();
     private static Map<Point, PathfinderData> pathfinderData = new HashMap<>();
 
@@ -161,18 +167,30 @@ public class Main {
         }
         initializeSubgrids();
 
-        // Initialize pathfinders
-        pathfinders.put(subgridPositions[0], new Dijkstra());
-        pathfinders.put(subgridPositions[1], new BFS());
-        pathfinders.put(subgridPositions[2], new AStar());
-        pathfinders.put(subgridPositions[3], new StrongAStar());
+        // All pathfinders that can be selected.
+        // "None" must exist at the end of this list
+        loadedPathfinders.add(new Dijkstra());
+        loadedPathfinders.add(new BreadthFirstSearch());
+        loadedPathfinders.add(new AStar());
+        loadedPathfinders.add(new GreedyBestFirstSearch());
+        loadedPathfinders.add(new StrongAStar());
+        loadedPathfinders.add(new None());
+
+        // Initialize pathfinders. Load the first several as the default ones.
+        for (int i = 0; i < subgridPositions.length; i++) {
+            Pathfinder pathfinder;
+            if (i < loadedPathfinders.size()) {
+                pathfinder = loadedPathfinders.get(i);
+            } else {
+                pathfinder = new None();
+            }
+            pathfinders.put(subgridPositions[i], pathfinder);
+        }
         initializePathfinders();
 
         // Initialize GUI and grid labels
         initializeGUI();
-        for (Point pathfinderPos : subgridPositions) {
-            drawText(pathfinderPos.x, pathfinderPos.y - 2, pathfinders.get(pathfinderPos).toString());
-        }
+        updateSubgridLabels();
         updateSolutionLabels();
 
         run();
@@ -184,11 +202,34 @@ public class Main {
      * @since v1.3
      */
     private static void initializeGUI() {
+        //////////////////////// TOP (Algorithm Selection) ////////////////////////
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BorderLayout());
+
+        JPanel algorithmsPanel = new JPanel();
+        algorithmsPanel.setLayout(new GridLayout(1, pathfinders.size()));
+        topPanel.add(algorithmsPanel, BorderLayout.NORTH);
+
+        String[] pathfinderOptions = new String[loadedPathfinders.size()];
+        for (int i = 0; i < pathfinderOptions.length; i++) {
+            pathfinderOptions[i] = loadedPathfinders.get(i).toString();
+        }
+
+        for (int i = 0; i < subgridPositions.length; i++) {
+            JComboBox selectionBox = new JComboBox(pathfinderOptions);
+            // If there are more subgrids than pathfinders, assign any extras to be "None", which is
+            // the last in the loadedPathfinders list.
+            selectionBox.setSelectedIndex(i < loadedPathfinders.size() ? i : loadedPathfinders.size() - 1);
+            selectionBox.addActionListener(new SelectAlgorithmListener(i, selectionBox));
+            algorithmsPanel.add(selectionBox);
+            algorithmSelectors[i] = selectionBox;
+        }
+
         //////////////////////// BOTTOM ////////////////////////
         JFrame frame = grid.getFrame();
-        JPanel bottomPanel = new JPanel();
+        JPanel controlPanel = new JPanel();
 
-        bottomPanel.add(new JLabel("Slow"));
+        controlPanel.add(new JLabel("Slow"));
         JSlider speedSlider = new JSlider(JSlider.HORIZONTAL, 0, MAX_DELAY, MAX_DELAY - DEFAULT_STEP_DELAY);
         speedSlider.addChangeListener(new ChangeListener() {
             @Override
@@ -197,8 +238,8 @@ public class Main {
                 selectedDelay = MAX_DELAY - source.getValue();
             }
         });
-        bottomPanel.add(speedSlider);
-        bottomPanel.add(new JLabel("Fast"));
+        controlPanel.add(speedSlider);
+        controlPanel.add(new JLabel("Fast"));
 
         JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(new ActionListener() {
@@ -206,10 +247,11 @@ public class Main {
             public void actionPerformed(ActionEvent e) {
                 started = false;
                 running = false;
+                reset();
                 initializeSubgrids();
             }
         });
-        bottomPanel.add(clearButton);
+        controlPanel.add(clearButton);
 
         JButton stepButton = new JButton("Step");
         stepButton.addActionListener(new ActionListener() {
@@ -218,7 +260,7 @@ public class Main {
                 stepAlgorithms();
             }
         });
-        bottomPanel.add(stepButton);
+        controlPanel.add(stepButton);
 
         JButton runButton = new JButton("Run");
         runButton.addActionListener(new ActionListener() {
@@ -227,7 +269,7 @@ public class Main {
                 running = true;
             }
         });
-        bottomPanel.add(runButton);
+        controlPanel.add(runButton);
 
         JButton resetButton = new JButton("Reset");
         resetButton.addActionListener(new ActionListener() {
@@ -236,7 +278,7 @@ public class Main {
                 reset();
             }
         });
-        bottomPanel.add(resetButton);
+        controlPanel.add(resetButton);
 
         JLabel weightSliderValue = new JLabel("X");
         JSlider weightSlider = new JSlider(JSlider.HORIZONTAL, 1, MAX_COST, MAX_COST);
@@ -248,17 +290,17 @@ public class Main {
                 weightSliderValue.setText(selectedWeight == MAX_COST ? "X" : ("" + selectedWeight));
             }
         });
-        bottomPanel.add(new JLabel("Cell Weight:"));
-        bottomPanel.add(weightSlider);
-        bottomPanel.add(weightSliderValue);
+        controlPanel.add(new JLabel("Cell Weight:"));
+        controlPanel.add(weightSlider);
+        controlPanel.add(weightSliderValue);
 
         //////////////////////// RIGHT TOP (Presets) ////////////////////////
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BorderLayout());
 
-        JPanel rightTopPanel = new JPanel();
-        rightTopPanel.setLayout(new GridLayout(10, 1));
-        rightPanel.add(rightTopPanel, BorderLayout.NORTH);
+        JPanel presetsPanel = new JPanel();
+        presetsPanel.setLayout(new GridLayout(10, 1));
+        rightPanel.add(presetsPanel, BorderLayout.NORTH);
 
         JButton genMaze = new JButton("Maze");
         genMaze.addActionListener(new ActionListener() {
@@ -281,7 +323,7 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 1, GRID_HEIGHT - 1);
             }
         });
-        rightTopPanel.add(genMaze);
+        presetsPanel.add(genMaze);
 
         JButton genWeightedMaze = new JButton("Weighted Maze");
         genWeightedMaze.addActionListener(new ActionListener() {
@@ -305,7 +347,7 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 1, GRID_HEIGHT - 1);
             }
         });
-        rightTopPanel.add(genWeightedMaze);
+        presetsPanel.add(genWeightedMaze);
 
         JButton genRandom = new JButton("Randomized");
         genRandom.addActionListener(new ActionListener() {
@@ -333,7 +375,7 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT - 2);
             }
         });
-        rightTopPanel.add(genRandom);
+        presetsPanel.add(genRandom);
 
         JButton genGradient = new JButton("Gradient");
         genGradient.addActionListener(new ActionListener() {
@@ -355,7 +397,7 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT / 2);
             }
         });
-        rightTopPanel.add(genGradient);
+        presetsPanel.add(genGradient);
 
         JButton genRandomGradient = new JButton("Randomized Gradient");
         genRandomGradient.addActionListener(new ActionListener() {
@@ -379,12 +421,12 @@ public class Main {
                 setTargetPosition(GRID_WIDTH - 2, GRID_HEIGHT / 2);
             }
         });
-        rightTopPanel.add(genRandomGradient);
+        presetsPanel.add(genRandomGradient);
 
         //////////////////////// RIGHT BOTTOM (Editing Functions) ////////////////////////
-        JPanel rightBottomPanel = new JPanel();
-        rightBottomPanel.setLayout(new GridLayout(4, 1));
-        rightPanel.add(rightBottomPanel, BorderLayout.SOUTH);
+        JPanel editorPanel = new JPanel();
+        editorPanel.setLayout(new GridLayout(4, 1));
+        rightPanel.add(editorPanel, BorderLayout.SOUTH);
 
         JButton wallFill = new JButton("Fill With Walls");
         wallFill.addActionListener(new ActionListener() {
@@ -401,7 +443,7 @@ public class Main {
                 }
             }
         });
-        rightBottomPanel.add(wallFill);
+        editorPanel.add(wallFill);
 
         JButton clearWeights = new JButton("Clear Weights");
         clearWeights.addActionListener(new ActionListener() {
@@ -418,7 +460,7 @@ public class Main {
                 }
             }
         });
-        rightBottomPanel.add(clearWeights);
+        editorPanel.add(clearWeights);
 
         JButton toggleWeightsButton = new JButton("Toggle Cell Costs");
         toggleWeightsButton.addActionListener(new ActionListener() {
@@ -432,7 +474,7 @@ public class Main {
                 }
             }
         });
-        rightBottomPanel.add(toggleWeightsButton);
+        editorPanel.add(toggleWeightsButton);
 
         JTextField seedField = new JTextField("Seed (Leave blank for none)");
         seedField.addFocusListener(new FocusListener() {
@@ -472,11 +514,12 @@ public class Main {
                 }
             }
         });
-        rightBottomPanel.add(seedField);
+        editorPanel.add(seedField);
 
         // Assemble final frame
+        frame.add(topPanel, BorderLayout.NORTH);
         frame.add(rightPanel, BorderLayout.EAST);
-        frame.add(bottomPanel, BorderLayout.SOUTH);
+        frame.add(controlPanel, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
     }
@@ -544,7 +587,8 @@ public class Main {
     }
 
     /**
-     * Stops all currently running algorithms and clears any exploration visualization.
+     * Stops all currently running algorithms, clear any exploration visualization, and enable
+     * algorithm selection.
      *
      * @since v1.3.1
      */
@@ -552,6 +596,9 @@ public class Main {
         started = false;
         running = false;
         clearExploration();
+        for (JComboBox box : algorithmSelectors) {
+            box.setEnabled(true);
+        }
     }
 
     /**
@@ -562,8 +609,23 @@ public class Main {
      * @param text The text to draw.
      */
     private static void drawText(int x, int y, String text) {
-        for (int i = 0; i < Math.min(text.length(), GRID_WIDTH); i++) {
+        for (int i = 0; i < Math.min(text.length(), grid.getWidth() - x); i++) {
             grid.set(x + i, y, ASCII_OFFSET + text.charAt(i));
+        }
+    }
+
+    /**
+     * Updates the subgrid labels that say the algorithm name.
+     *
+     * @since v1.5
+     */
+    private static void updateSubgridLabels() {
+        for (Point pathfinderPos : subgridPositions) {
+            // Clear previous text
+            for (int x = 0; x < GRID_WIDTH; x++) {
+                grid.set(pathfinderPos.x + x, pathfinderPos.y - 2, BG);
+            }
+            drawText(pathfinderPos.x, pathfinderPos.y - 2, pathfinders.get(pathfinderPos).toString());
         }
     }
 
@@ -755,17 +817,31 @@ public class Main {
      */
     private static void stepAlgorithms() {
         if (!started) {
+            for (JComboBox box : algorithmSelectors) {
+                box.setEnabled(false);
+            }
             initializePathfinders();
         }
         started = true;
 
+        // This set keeps track of which algorithms have step()'d on this method call. It is used in
+        // the event that multiple of the same algorithm have been selected in different subgrids to
+        // skip the algorithm from being step()'d multiple times per call to this method.
+        Set<Pathfinder> alreadyProcessed = new HashSet<>();
         for (Point pathfinderPos : subgridPositions) {
             PathfinderData data = pathfinderData.get(pathfinderPos);
 
             if (!data.done) {
+                Pathfinder pathfinder = pathfinders.get(pathfinderPos);
+                // If this algorithm is selected multiple times and has already step()'d this
+                // iteration, skip doing it again
+                if (alreadyProcessed.contains(pathfinder)) {
+                    continue;
+                }
+                alreadyProcessed.add(pathfinder);
+
                 data.steps++; // Increment step counter
 
-                Pathfinder pathfinder = pathfinders.get(pathfinderPos);
                 List<Point> exploredCells = pathfinder.step();
                 for (Point p : exploredCells) {
                     int currentValue = grid.get(p);
@@ -902,6 +978,31 @@ public class Main {
         @Override
         public String toString() {
             return ((int) this.cost) + "/" + this.pathLength + "/" + this.steps;
+        }
+    }
+
+    /**
+     * Updates the selected algorithms when a new algorithm is selected
+     */
+    private static class SelectAlgorithmListener implements ActionListener {
+        private int pathfinderIndex;
+        private JComboBox selectionBox;
+
+        /**
+         * Initializes a new listener for a given subgrid and selection box.
+         *
+         * @param pathfinderIndex The subgrid index that this listener updates.
+         * @param selectionBox    The selection box that this object is listening to.
+         */
+        public SelectAlgorithmListener(int pathfinderIndex, JComboBox selectionBox) {
+            this.pathfinderIndex = pathfinderIndex;
+            this.selectionBox = selectionBox;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            pathfinders.put(subgridPositions[this.pathfinderIndex], loadedPathfinders.get(this.selectionBox.getSelectedIndex()));
+            updateSubgridLabels();
         }
     }
 }

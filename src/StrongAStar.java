@@ -9,7 +9,6 @@ public class StrongAStar extends AStar {
      */
     public static final double WEIGHT = 3.0;
 
-    @Override
     /**
      * Returns the Manhattan distance between the given points, multiplied by the class weight
      * multiplier.
@@ -18,7 +17,9 @@ public class StrongAStar extends AStar {
      * @param p2 Second point of the point pair to calculate the heuristic of.
      * @return The Manhattan distance between the two points, multiplied by the class weight
      * multiplier.
-     */ public double calcHeuristic(Point p1, Point p2) {
+     */
+    @Override
+    public double calcHeuristic(Point p1, Point p2) {
         // This heuristic overestimates, making it no longer an "admissible heuristic."
         // It is therefore not guaranteed to find the optimal path.
         // As a tradeoff to this sacrifice is that this version of A* may find a path

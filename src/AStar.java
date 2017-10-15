@@ -10,7 +10,7 @@ import java.util.Set;
  * A* Search Algorithm
  */
 public class AStar implements Pathfinder {
-    private static class Node implements Comparable<Node> {
+    protected static class Node implements Comparable<Node> {
         public final Point point; // Position of this node
         public double gScore; // The real cost to reach this node
         public double fScore; // The total cost to reach this node (including heuristic cost)
@@ -90,7 +90,7 @@ public class AStar implements Pathfinder {
                 exploredCells.add(neighbor.point);
 
 
-                double tentativeGScore = current.gScore + Main.getCost(neighbor.point);
+                double tentativeGScore = calcTentativeGScore(current, neighbor);
                 if (tentativeGScore < neighbor.gScore) {
                     // This is a better path
                     neighbor.cameFrom = current;
@@ -98,6 +98,10 @@ public class AStar implements Pathfinder {
                     neighbor.fScore = neighbor.gScore + calcHeuristic(neighbor.point, this.target);
                 }
 
+                // Reinsert node with its new priority
+                // TODO
+                // this.openSet.remove(neighbor);
+                // this.openSet.add(neighbor);
                 // Discover a new Node
                 if (!this.openSet.contains(neighbor)) {
                     this.openSet.add(neighbor);
@@ -106,6 +110,19 @@ public class AStar implements Pathfinder {
         }
 
         return exploredCells;
+    }
+
+    /**
+     * Returns a tentative gScore (real cost to reach this node) for the given neighbor of a given
+     * node.
+     *
+     * @param current  The node currently being evaluated.
+     * @param neighbor The neighbor of the current node being evaluated.
+     * @return The tentative gScore of the neighboring node.
+     * @since v1.5.2
+     */
+    protected double calcTentativeGScore(Node current, Node neighbor) {
+        return current.gScore + Main.getCost(neighbor.point);
     }
 
     /**

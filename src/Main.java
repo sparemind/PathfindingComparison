@@ -38,7 +38,7 @@ import java.util.Set;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.5
+ * @version v1.5.1
  */
 public class Main {
     /**
@@ -386,8 +386,11 @@ public class Main {
                 for (int x = 0; x < GRID_WIDTH; x++) {
                     for (int y = 0; y < GRID_HEIGHT; y++) {
                         // The weight of the cell. Weight is max in the y-center, decreasing going out
-                        double diff = (1 - (Math.abs(y - GRID_HEIGHT / 2.0) / (GRID_HEIGHT / 2.0))) * (MAX_COST - 1);
-                        int finalWeight = WEIGHTED + 1 + (int) diff;
+                        int diff = (int) ((1 - ((double) Math.abs(y - GRID_HEIGHT / 2) / (GRID_HEIGHT / 2))) * (MAX_COST - 1));
+                        int finalWeight = WEIGHTED + diff;
+                        if (diff == 0) {
+                            finalWeight = EMPTY;
+                        }
                         subgridsSet(x, y, finalWeight);
                     }
                 }
@@ -409,10 +412,15 @@ public class Main {
                 for (int x = 0; x < GRID_WIDTH; x++) {
                     for (int y = 0; y < GRID_HEIGHT; y++) {
                         // The weight of the cell. Weight is max in the y-center, decreasing going out
-                        double diff = (1 - (Math.abs(y - GRID_HEIGHT / 2.0) / (GRID_HEIGHT / 2.0))) * (MAX_COST - 1);
+                        int diff = (int) ((1 - ((double) Math.abs(y - GRID_HEIGHT / 2) / (GRID_HEIGHT / 2))) * (MAX_COST - 1));
+                        int finalWeight = WEIGHTED + (diff - (int) (diff * rand.nextDouble()));
+                        if (diff == 0) {
+                            finalWeight = EMPTY;
+                        }
+
                         // Randomly subtract some amount from this weight
-                        int randomWeight = WEIGHTED + 1 + (int) (diff - ((diff) * rand.nextDouble()));
-                        subgridsSet(x, y, randomWeight);
+                        // int randomWeight = WEIGHTED + 1 + (int) (diff - ((diff) * rand.nextDouble()));
+                        subgridsSet(x, y, finalWeight);
                     }
                 }
 

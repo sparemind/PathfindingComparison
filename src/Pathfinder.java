@@ -23,13 +23,19 @@ public interface Pathfinder {
     List<Point> step();
 
     /**
-     * Returns all nodes that make up the solution path.
+     * Returns all points that make up the solution path.
      *
      * @return List of all nodes in the solution path. If a solution path has not been found,
      * returns null. Nodes are ordered starting from the path start point to the path endpoint.
      */
     List<Point> getSolution();
 
+    /**
+     * Returns all points that are being considered at the current step by this pathfinder.
+     *
+     * @return Set of all points being considered at the current step.
+     * @since v1.5.3
+     */
     Set<Point> getFrontier();
 
     /**

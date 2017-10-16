@@ -38,7 +38,7 @@ import java.util.Set;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.5.3
+ * @version v1.5.4
  */
 public class Main {
     /**
@@ -715,6 +715,7 @@ public class Main {
      */
     private static void clearExploration() {
         grid.fill(1, 0);
+        grid.fill(2, 0);
     }
 
     /**
@@ -792,14 +793,14 @@ public class Main {
                 for (Point p : pathfinderData.keySet()) {
                     if (!pathfinderData.get(p).done) {
                         allDone = false;
-                        // If all algorithms are complete, do one last step so that
-                        // the final displays update (e.g. the frontier is removed)
-                        stepAlgorithms();
                         break;
                     }
                 }
                 if (allDone) {
                     running = false;
+                    // If all algorithms are complete, do one last step so that
+                    // the final displays update (e.g. the frontier is removed)
+                    stepAlgorithms();
                 }
 
                 try {

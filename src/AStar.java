@@ -79,7 +79,7 @@ public class AStar implements Pathfinder {
             Node down = new Node(new Point(current.point.x, current.point.y + 1));
             Node right = new Node(new Point(current.point.x + 1, current.point.y));
             Node left = new Node(new Point(current.point.x - 1, current.point.y));
-            Node[] neighbors = {up, right, down, left};
+            Node[] neighbors = {left, down, right, up};
 
             for (Node neighbor : neighbors) {
                 // Ignore already evaluated nodes and ones that aren't traversable

@@ -1,6 +1,8 @@
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Dummy pathfinder that does nothing.
@@ -13,7 +15,12 @@ public class None implements Pathfinder {
 
     @Override
     public List<Point> step() {
-        return new ArrayList<Point>();
+        return new ArrayList<>();
+    }
+
+    @Override
+    public Set<Point> getFrontier() {
+        return new HashSet<>();
     }
 
     @Override

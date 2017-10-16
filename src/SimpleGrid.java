@@ -20,7 +20,7 @@ import java.util.Map;
  * text, and text color, which are then drawn in any box containing the corresponding value.
  *
  * @author Jake Chiang
- * @version 1.2.4
+ * @version 1.2.5
  */
 public class SimpleGrid {
     private GridPanel panel;
@@ -304,6 +304,44 @@ public class SimpleGrid {
         for (int x = 0; x < this.panel.width; x++) {
             for (int y = 0; y < this.panel.height; y++) {
                 this.grids.get(layer)[y][x] = value;
+            }
+        }
+        tryRepaint();
+    }
+
+    /**
+     * Replaces all cells of a given value with cells of a new value. Repaints the grid if auto
+     * repainting is enabled.
+     *
+     * @param currentValue The value to be replaced.
+     * @param newValue     The value to set all cells of the current value to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
+     * @since v1.2.5
+     */
+    public void replace(int currentValue, int newValue) {
+        replace(0, currentValue, newValue);
+    }
+
+    /**
+     * Replaces all cells of a given value with cells of a new value. Repaints the grid if auto
+     * repainting is enabled.
+     *
+     * @param layer        The grid layer to replace on. If not a valid layer, the grid will not be
+     *                     changed.
+     * @param currentValue The value to be replaced.
+     * @param newValue     The value to set all cells of the current value to.
+     * @see SimpleGrid#setAutoRepaint(boolean)
+     * @since v1.2.5
+     */
+    public void replace(int layer, int currentValue, int newValue) {
+        if (layer < 0 || layer > this.grids.size() - 1) {
+            return;
+        }
+        for (int x = 0; x < this.panel.width; x++) {
+            for (int y = 0; y < this.panel.height; y++) {
+                if (this.grids.get(layer)[y][x] == currentValue) {
+                    this.grids.get(layer)[y][x] = newValue;
+                }
             }
         }
         tryRepaint();

@@ -95,6 +95,15 @@ public class BreadthFirstSearch implements Pathfinder {
     }
 
     @Override
+    public Set<Point> getFrontier() {
+        Set<Point> frontier = new HashSet<>();
+        for (Point p : this.openSet) {
+            frontier.add(p);
+        }
+        return frontier;
+    }
+
+    @Override
     public List<Point> getSolution() {
         return this.solutionPath;
     }

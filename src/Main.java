@@ -38,7 +38,7 @@ import java.util.Set;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.5.2
+ * @version v1.5.3
  */
 public class Main {
     /**
@@ -103,6 +103,7 @@ public class Main {
     public static final int TARGET = 5; // Pathfinding end point
     public static final int EXPLORED = 6; // Pathfinding explored cell
     public static final int SOLUTION = 7; // Final solution path
+    public static final int FRONTIER = 8; // Cells still being explored
     public static final int WEIGHTED = 100; // First value of cells with a travel cost
 
     private static SimpleGrid grid;
@@ -130,6 +131,7 @@ public class Main {
         grid = new SimpleGrid(totalWidth, totalHeight, CELL_SIZE, 1, "Pathfinding Algorithm Comparison");
         grid.setGridlineColor(Color.GRAY);
         grid.addLayer(); // Layer 1 shows the explored cells and solution path
+        grid.addLayer(); // Layer 2 shows the frontier cells
 
         grid.setColor(BG, Color.GRAY);
         grid.setColor(EMPTY, Color.WHITE);
@@ -138,6 +140,7 @@ public class Main {
         grid.setColor(TARGET, Color.RED);
         grid.setColor(EXPLORED, Color.LIGHT_GRAY);
         grid.setColor(SOLUTION, Color.CYAN);
+        grid.setColor(FRONTIER, new Color(171, 213, 255));
         for (int i = 0; i < 128; i++) {
             grid.setText(ASCII_OFFSET + i, (char) i);
             grid.setTextColor(ASCII_OFFSET + i, Color.WHITE);
@@ -160,11 +163,7 @@ public class Main {
         }
 
         // Initialize grid and subgrids
-        for (int x = 0; x < totalWidth; x++) {
-            for (int y = 0; y < totalHeight; y++) {
-                grid.set(x, y, BG);
-            }
-        }
+        grid.fill(BG);
         initializeSubgrids();
 
         // All pathfinders that can be selected.
@@ -441,14 +440,7 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 reset();
-
-                for (int x = 0; x < GRID_WIDTH; x++) {
-                    for (int y = 0; y < GRID_HEIGHT; y++) {
-                        if (grid.get(BORDER_SIZE + x, BORDER_SIZE + y) == EMPTY) {
-                            subgridsSet(x, y, WALL);
-                        }
-                    }
-                }
+                grid.replace(EMPTY, WALL);
             }
         });
         editorPanel.add(wallFill);
@@ -722,11 +714,7 @@ public class Main {
      * @since v1.3
      */
     private static void clearExploration() {
-        for (int x = 0; x < grid.getWidth(); x++) {
-            for (int y = 0; y < grid.getHeight(); y++) {
-                grid.fill(1, 0);
-            }
-        }
+        grid.fill(1, 0);
     }
 
     /**
@@ -804,6 +792,9 @@ public class Main {
                 for (Point p : pathfinderData.keySet()) {
                     if (!pathfinderData.get(p).done) {
                         allDone = false;
+                        // If all algorithms are complete, do one last step so that
+                        // the final displays update (e.g. the frontier is removed)
+                        stepAlgorithms();
                         break;
                     }
                 }
@@ -824,6 +815,9 @@ public class Main {
      * Advances all algorithms one iteration.
      */
     private static void stepAlgorithms() {
+        // Prevent flickering when frontier cells are being drawn
+        grid.setAutoRepaint(false);
+
         if (!started) {
             for (JComboBox box : algorithmSelectors) {
                 box.setEnabled(false);
@@ -831,6 +825,9 @@ public class Main {
             initializePathfinders();
         }
         started = true;
+
+        // Clear the previous frontier cell display
+        grid.replace(2, FRONTIER, 0);
 
         // This set keeps track of which algorithms have step()'d on this method call. It is used in
         // the event that multiple of the same algorithm have been selected in different subgrids to
@@ -850,6 +847,7 @@ public class Main {
 
                 data.steps++; // Increment step counter
 
+                // Display explored cells
                 List<Point> exploredCells = pathfinder.step();
                 for (Point p : exploredCells) {
                     int currentValue = grid.get(p);
@@ -857,6 +855,14 @@ public class Main {
                         grid.set(1, p, EXPLORED);
                     }
                 }
+
+                // Display cells to be explored
+                Set<Point> frontier = pathfinder.getFrontier();
+                for (Point p : frontier) {
+                    grid.set(2, p, FRONTIER);
+                }
+
+                // Display solution if one has been found
                 List<Point> solution = pathfinder.getSolution();
                 if (solution != null) {
                     double cost = 0;
@@ -878,6 +884,9 @@ public class Main {
                 }
             }
         }
+
+        grid.setAutoRepaint(true);
+        grid.repaint();
     }
 
     /**

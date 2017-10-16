@@ -152,6 +152,15 @@ public class AStar implements Pathfinder {
     }
 
     @Override
+    public Set<Point> getFrontier() {
+        Set<Point> frontier = new HashSet<>();
+        for (Node n : this.openSet) {
+            frontier.add(n.point);
+        }
+        return frontier;
+    }
+
+    @Override
     public List<Point> getSolution() {
         return this.solutionPath;
     }

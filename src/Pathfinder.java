@@ -1,5 +1,6 @@
 import java.awt.Point;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Pathfinding algorithm
@@ -29,6 +30,7 @@ public interface Pathfinder {
      */
     List<Point> getSolution();
 
+    Set<Point> getFrontier();
 
     /**
      * Returns the full name of this algorithm.

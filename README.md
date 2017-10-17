@@ -28,7 +28,7 @@ running, advance each algorithm a single step, or clear/reset the grids.
 **Included Algorithms:**
 
 * [Dijkstra's Algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm)
-* [A* Search](https://en.wikipedia.org/wiki/A*_search_algorithm) (2 variants)
+* [A* Search](https://en.wikipedia.org/wiki/A*_search_algorithm) (3 variants)
 * [Breadth First Search](https://en.wikipedia.org/wiki/Breadth-first_search)
 * [Greedy Best First Search](https://en.wikipedia.org/wiki/Best-first_search#Greedy_BFS)
 

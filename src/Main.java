@@ -32,13 +32,13 @@ import java.util.Set;
  * The currently supported algorithms are:
  * <ul>
  * <li>Dijkstra's Algorithm</li>
- * <li>A* Search (2 variants)</li>
+ * <li>A* Search (3 variants)</li>
  * <li>Breadth First Search</li>
  * <li>Greedy Best First Search</li>
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.5.4
+ * @version v1.5.5
  */
 public class Main {
     /**
@@ -173,6 +173,7 @@ public class Main {
         loadedPathfinders.add(new AStar());
         loadedPathfinders.add(new GreedyBestFirstSearch());
         loadedPathfinders.add(new StrongAStar());
+        loadedPathfinders.add(new TiebreakerAStar());
         loadedPathfinders.add(new None());
 
         // Initialize pathfinders. Load the first several as the default ones.

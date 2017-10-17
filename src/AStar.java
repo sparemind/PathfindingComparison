@@ -1,8 +1,10 @@
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 
@@ -46,6 +48,7 @@ public class AStar implements Pathfinder {
     private Point target;
     private PriorityQueue<Node> openSet;
     private Set<Node> closedSet;
+    private Map<Point, Node> nodes; // Holds the Node objects for points so they can be reused
     private List<Point> solutionPath;
 
     @Override
@@ -53,12 +56,14 @@ public class AStar implements Pathfinder {
         this.target = target;
         this.openSet = new PriorityQueue<>();
         this.closedSet = new HashSet<>();
+        this.nodes = new HashMap<>();
         this.solutionPath = null;
 
         Node startNode = new Node(start);
         startNode.gScore = 0;
         startNode.fScore = calcHeuristic(start, target);
         this.openSet.add(startNode);
+        this.nodes.put(startNode.point, startNode);
     }
 
     @Override
@@ -79,7 +84,7 @@ public class AStar implements Pathfinder {
             Node down = new Node(new Point(current.point.x, current.point.y + 1));
             Node right = new Node(new Point(current.point.x + 1, current.point.y));
             Node left = new Node(new Point(current.point.x - 1, current.point.y));
-            Node[] neighbors = {left, down, right, up};
+            Node[] neighbors = {up, right, down, left};
 
             for (Node neighbor : neighbors) {
                 // Ignore already evaluated nodes and ones that aren't traversable
@@ -88,23 +93,29 @@ public class AStar implements Pathfinder {
                 }
 
                 exploredCells.add(neighbor.point);
+                // Discover a new Node
+                if (!this.openSet.contains(neighbor)) {
+                    this.openSet.add(neighbor);
+                    this.nodes.put(neighbor.point, neighbor);
+                }
 
-
+                // Get the node reference for this point, if one already exists
+                if (this.nodes.containsKey(neighbor.point)) {
+                    neighbor = this.nodes.get(neighbor.point);
+                }
                 double tentativeGScore = calcTentativeGScore(current, neighbor);
                 if (tentativeGScore < neighbor.gScore) {
                     // This is a better path
                     neighbor.cameFrom = current;
                     neighbor.gScore = tentativeGScore;
                     neighbor.fScore = neighbor.gScore + calcHeuristic(neighbor.point, this.target);
-                }
 
-                // Reinsert node with its new priority
-                // TODO
-                // this.openSet.remove(neighbor);
-                // this.openSet.add(neighbor);
-                // Discover a new Node
-                if (!this.openSet.contains(neighbor)) {
-                    this.openSet.add(neighbor);
+                    // Update this node's position in the priority queue
+                    // Note: O(n)
+                    if (this.openSet.contains(neighbor)) {
+                        this.openSet.remove(neighbor);
+                        this.openSet.add(neighbor);
+                    }
                 }
             }
         }

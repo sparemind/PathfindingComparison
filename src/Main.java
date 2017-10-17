@@ -58,7 +58,7 @@ public class Main {
      */
     public static final int GRID_MARGIN_X = 2;
     /**
-     * Number of cells between each sub grid vertically.
+     * Number of cells between each sub grid vertically. Must be &gt;= 2.
      */
     public static final int GRID_MARGIN_Y = 3;
     /**
@@ -167,13 +167,13 @@ public class Main {
         initializeSubgrids();
 
         // All pathfinders that can be selected.
-        // "None" must exist at the end of this list
         loadedPathfinders.add(new Dijkstra());
         loadedPathfinders.add(new BreadthFirstSearch());
         loadedPathfinders.add(new AStar());
         loadedPathfinders.add(new GreedyBestFirstSearch());
         loadedPathfinders.add(new StrongAStar());
         loadedPathfinders.add(new TiebreakerAStar());
+        // "None" must exist at the end of this list
         loadedPathfinders.add(new None());
 
         // Initialize pathfinders. Load the first several as the default ones.
@@ -216,7 +216,7 @@ public class Main {
         }
 
         for (int i = 0; i < subgridPositions.length; i++) {
-            JComboBox selectionBox = new JComboBox(pathfinderOptions);
+            JComboBox<String> selectionBox = new JComboBox<>(pathfinderOptions);
             // If there are more subgrids than pathfinders, assign any extras to be "None", which is
             // the last in the loadedPathfinders list.
             selectionBox.setSelectedIndex(i < loadedPathfinders.size() ? i : loadedPathfinders.size() - 1);

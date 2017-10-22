@@ -38,7 +38,7 @@ import java.util.Set;
  * </ul>
  *
  * @author Jake Chiang
- * @version v1.5.5
+ * @version v1.5.6
  */
 public class Main {
     /**
@@ -737,7 +737,7 @@ public class Main {
         while (true) {
             if (grid.isMouseDown()) {
                 Point mousePos = grid.getMousePosition();
-                if (started || mousePos == null) {
+                if (started || grid.isOOB(mousePos)) {
                     continue;
                 }
                 Point mouseLocalPos = getLocalPos(mousePos);

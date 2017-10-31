@@ -65,7 +65,7 @@ public class BreadthFirstSearch implements Pathfinder {
                     this.cameFrom.put(neighbor, current);
 
                     // If a neighbor hasn't been visited, add to the queue to be visited
-                    if (!this.closedSet.contains(neighbor)) {
+                    if (!this.openSet.contains(neighbor)) {
                         this.openSet.add(neighbor);
                     }
 

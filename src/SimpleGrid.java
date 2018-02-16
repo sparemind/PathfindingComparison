@@ -1,5 +1,6 @@
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.WindowConstants;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -14,13 +15,38 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class allows for the creation, management, and display of a simple 2D graphical grid.
+ * MIT License
  * <p>
- * Each grid box can be set to contain a single integer value. These values can be mapped to color,
- * text, and text color, which are then drawn in any box containing the corresponding value.
+ * Copyright (c) 2017 Jake Chiang
+ * <p>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * <p>
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * <p>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * <p>
+ * <p>
+ * This class allows for the creation, management, and display of a simple 2D
+ * graphical grid.
+ * <p>
+ * Each grid box can be set to contain a single integer value. These values can
+ * be mapped to color, text, and text color, which are then drawn in any box
+ * containing the corresponding value.
  *
  * @author Jake Chiang
- * @version 1.2.5
+ * @version 1.2.9
  */
 public class SimpleGrid {
     private GridPanel panel;
@@ -31,13 +57,15 @@ public class SimpleGrid {
     private boolean autoRepaint;
 
     /**
-     * Create a new window containing a blank grid. The window will be automatically sized to fit
-     * the grid and will be positioned in the center of the screen.
+     * Create a new window containing a blank grid. The window will be
+     * automatically sized to fit the grid and will be positioned in the center
+     * of the screen.
      * <p>
-     * By default, all cells will have a value of 0 and the gridlines will be colored black. By
-     * default, 0 will also be mapped to have no text, black text color, and "null" cell color. This
-     * cell color will appear white on the default grid layer (layer 0) and transparent on higher
-     * layers. It is not recommended you change this color, since then lower layers may not be
+     * By default, all cells will have a value of 0 and the gridlines will be
+     * colored black. By default, 0 will also be mapped to have no text, black
+     * text color, and "null" cell color. This cell color will appear white on
+     * the default grid layer (layer 0) and transparent on higher layers. It is
+     * not recommended you change this color, since then lower layers may not be
      * visible.
      *
      * @param width          The width of the grid in cells.
@@ -59,7 +87,7 @@ public class SimpleGrid {
         this.mouseDown = false;
         this.autoRepaint = true;
 
-        this.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.frame.add(this.panel);
         this.frame.setVisible(true);
         this.frame.setResizable(false);
@@ -107,8 +135,8 @@ public class SimpleGrid {
      * Returns whether the given coordinates are out-of-bounds of the grid.
      *
      * @param pos The coordinates to check.
-     * @return True if the given coordinates are out-of-bounds of the grid or if the position is
-     * null, false otherwise.
+     * @return True if the given coordinates are out-of-bounds of the grid or if
+     * the position is null, false otherwise.
      * @see SimpleGrid#isOOB(int, int)
      */
     public boolean isOOB(Point pos) {
@@ -123,18 +151,20 @@ public class SimpleGrid {
      *
      * @param x The x-coordinate to check.
      * @param y The y-coordinate to check.
-     * @return True if the given coordinates are out-of-bounds of the grid, false otherwise.
+     * @return True if the given coordinates are out-of-bounds of the grid,
+     * false otherwise.
      * @see SimpleGrid#isOOB(Point)
      */
     public boolean isOOB(int x, int y) {
-        return x < 0 || y < 0 || x >= this.panel.width || y > this.panel.height;
+        return x < 0 || y < 0 || x >= this.panel.width || y >= this.panel.height;
     }
 
     /**
      * Returns the grid position of the mouse cursor.
      *
-     * @return The xy-coordinates of the cell the mouse cursor is currently over. If the mouse is
-     * out-of-bounds or over gridlines, returns null instead.
+     * @return The xy-coordinates of the cell the mouse cursor is currently
+     * over. If the mouse is out-of-bounds or over gridlines, returns null
+     * instead.
      */
     public Point getMousePosition() {
         return this.panel.getMouseCell();
@@ -150,7 +180,8 @@ public class SimpleGrid {
     }
 
     /**
-     * Creates a new grid layer on top of all others. All cells in this layer will have value 0.
+     * Creates a new grid layer on top of all others. All cells in this layer
+     * will have value 0.
      *
      * @since v1.1
      */
@@ -159,10 +190,11 @@ public class SimpleGrid {
     }
 
     /**
-     * Set whether to automatically repaint after a change is made. By default, auto repainting is
-     * enabled.
+     * Set whether to automatically repaint after a change is made. By default,
+     * auto repainting is enabled.
      *
-     * @param autoRepaint Whether to automatically repaint after the grid or its settings change.
+     * @param autoRepaint Whether to automatically repaint after the grid or its
+     *                    settings change.
      * @see SimpleGrid#repaint()
      * @since v1.1
      */
@@ -208,11 +240,14 @@ public class SimpleGrid {
     }
 
     /**
-     * Set the cell at the given coordinates to a value. Sets the cell of the default grid (layer
-     * 0).
+     * Set the cell at the given coordinates to a value. Sets the cell of the
+     * default grid (layer 0).
      *
-     * @param pos   The coordinates of the cell to set. If null, the grid will not be changed.
+     * @param pos   The coordinates of the cell to set. If null, the grid will
+     *              not be changed.
      * @param value The value to set the cell to.
+     * @throws GridIndexOutOfBoundsException If the given coordinates are out of
+     *                                       bounds.
      * @see SimpleGrid#set(int, int, int)
      * @see SimpleGrid#set(int, Point, int)
      */
@@ -221,12 +256,15 @@ public class SimpleGrid {
     }
 
     /**
-     * Set the cell at the given coordinates to a value. Sets the cell of the default grid (layer
-     * 0). This is equivalent to calling set(0, Point, int).
+     * Set the cell at the given coordinates to a value. Sets the cell of the
+     * default grid (layer 0). This is equivalent to calling set(0, Point,
+     * value).
      *
      * @param x     The x-coordinate of the cell to set.
      * @param y     The y-coordinate of the cell to set.
      * @param value The value to set the cell to.
+     * @throws GridIndexOutOfBoundsException If the given coordinates are out of
+     *                                       bounds.
      * @see SimpleGrid#set(Point, int)
      * @see SimpleGrid#set(int, int, int, int)
      */
@@ -238,8 +276,11 @@ public class SimpleGrid {
      * Set the cell at the given coordinates to a value.
      *
      * @param layer The layer of the cell to set
-     * @param pos   The coordinates of the cell to set. If null, the grid will not be changed.
+     * @param pos   The coordinates of the cell to set. If null, the grid will
+     *              not be changed.
      * @param value The value to set the cell to.
+     * @throws GridIndexOutOfBoundsException If the given coordinates are out of
+     *                                       bounds.
      * @see SimpleGrid#set(int, int, int, int)
      * @since v1.1
      */
@@ -251,20 +292,25 @@ public class SimpleGrid {
     }
 
     /**
-     * Set the cell at the given coordinates to a value. Repaints grid if auto repainting is
-     * enabled.
+     * Set the cell at the given coordinates to a value. Repaints grid if auto
+     * repainting is enabled.
      *
-     * @param layer The layer of the cell to set. If not a valid layer, the grid will not be
-     *              changed.
+     * @param layer The layer of the cell to set. If not a valid layer, the grid
+     *              will not be changed.
      * @param x     The x-coordinate of the cell to set.
      * @param y     The y-coordinate of the cell to set.
      * @param value The value to set the cell to.
+     * @throws GridIndexOutOfBoundsException If the given coordinates are out of
+     *                                       bounds.
      * @see SimpleGrid#set(int, Point, int)
      * @since v1.1
      */
     public void set(int layer, int x, int y, int value) {
         if (layer < 0 || layer > this.grids.size() - 1) {
             return;
+        }
+        if (isOOB(x, y)) {
+            throw new GridIndexOutOfBoundsException("Grid coordinates must be in bounds.");
         }
         this.grids.get(layer)[y][x] = value;
         ensureValueData(value);
@@ -276,9 +322,9 @@ public class SimpleGrid {
     }
 
     /**
-     * Fills the grid with a value, setting all cells in the grid to the value. Fills the default
-     * grid (layer 0). Repaints grid if auto repainting is enabled. This is equivalent to calling
-     * fill(0, int).
+     * Fills the grid with a value, setting all cells in the grid to the value.
+     * Fills the default grid (layer 0). Repaints grid if auto repainting is
+     * enabled. This is equivalent to calling fill(0, value).
      *
      * @param value The value to set all the cells in the grid to.
      * @see SimpleGrid#setAutoRepaint(boolean)
@@ -289,10 +335,11 @@ public class SimpleGrid {
     }
 
     /**
-     * Fills the grid with a value, setting all cells in the grid to the value. Repaints grid if
-     * auto repainting is enabled.
+     * Fills the grid with a value, setting all cells in the grid to the value.
+     * Repaints grid if auto repainting is enabled.
      *
-     * @param layer The grid layer to fill. If not a valid layer, the grid will not be changed.
+     * @param layer The grid layer to fill. If not a valid layer, the grid will
+     *              not be changed.
      * @param value The value to set all the cells in the grid layer to.
      * @see SimpleGrid#setAutoRepaint(boolean)
      * @since 1.2.3
@@ -310,8 +357,8 @@ public class SimpleGrid {
     }
 
     /**
-     * Replaces all cells of a given value with cells of a new value. Repaints the grid if auto
-     * repainting is enabled.
+     * Replaces all cells of a given value with cells of a new value. Repaints
+     * the grid if auto repainting is enabled.
      *
      * @param currentValue The value to be replaced.
      * @param newValue     The value to set all cells of the current value to.
@@ -323,11 +370,11 @@ public class SimpleGrid {
     }
 
     /**
-     * Replaces all cells of a given value with cells of a new value. Repaints the grid if auto
-     * repainting is enabled.
+     * Replaces all cells of a given value with cells of a new value. Repaints
+     * the grid if auto repainting is enabled.
      *
-     * @param layer        The grid layer to replace on. If not a valid layer, the grid will not be
-     *                     changed.
+     * @param layer        The grid layer to replace on. If not a valid layer,
+     *                     the grid will not be changed.
      * @param currentValue The value to be replaced.
      * @param newValue     The value to set all cells of the current value to.
      * @see SimpleGrid#setAutoRepaint(boolean)
@@ -348,11 +395,12 @@ public class SimpleGrid {
     }
 
     /**
-     * Fills the given row with a value, setting all cells in the row to the value. Repaints grid if
-     * auto repainting is enabled. This is equivalent to calling fillRow(0, int).
+     * Fills the given row with a value, setting all cells in the row to the
+     * value. Repaints grid if auto repainting is enabled. This is equivalent to
+     * calling fillRow(0, row, value).
      *
-     * @param row   The y-coordinate of the row to fill. If not a valid row, the grid will not be
-     *              changed.
+     * @param row   The y-coordinate of the row to fill. If not a valid row, the
+     *              grid will not be changed.
      * @param value The value to set all the cells in the row to.
      * @see SimpleGrid#setAutoRepaint(boolean)
      * @since 1.2.4
@@ -362,13 +410,13 @@ public class SimpleGrid {
     }
 
     /**
-     * Fills the given row with a value, setting all cells in the row to the value. Repaints grid if
-     * auto repainting is enabled.
+     * Fills the given row with a value, setting all cells in the row to the
+     * value. Repaints grid if auto repainting is enabled.
      *
-     * @param layer The grid layer to fill the row of. If not a valid layer, the grid will not be
-     *              changed.
-     * @param row   The y-coordinate of the row to fill. If not a valid row, the grid will not be
-     *              changed.
+     * @param layer The grid layer to fill the row of. If not a valid layer, the
+     *              grid will not be changed.
+     * @param row   The y-coordinate of the row to fill. If not a valid row, the
+     *              grid will not be changed.
      * @param value The value to set all the cells in the row to.
      * @see SimpleGrid#setAutoRepaint(boolean)
      * @since 1.2.4
@@ -383,11 +431,12 @@ public class SimpleGrid {
     }
 
     /**
-     * Fills the given column with a value, setting all cells in the column to the value. Repaints
-     * grid if auto repainting is enabled. This is equivalent to calling fillColumn(0, int).
+     * Fills the given column with a value, setting all cells in the column to
+     * the value. Repaints grid if auto repainting is enabled. This is
+     * equivalent to calling fillColumn(0, column, value).
      *
-     * @param column The x-coordinate of the column to fill. If not a valid row, the grid will not
-     *               be changed.
+     * @param column The x-coordinate of the column to fill. If not a valid row,
+     *               the grid will not be changed.
      * @param value  The value to set all the cells in the column to.
      * @see SimpleGrid#setAutoRepaint(boolean)
      * @since 1.2.4
@@ -397,13 +446,13 @@ public class SimpleGrid {
     }
 
     /**
-     * Fills the given column with a value, setting all cells in the column to the value. Repaints
-     * grid if auto repainting is enabled.
+     * Fills the given column with a value, setting all cells in the column to
+     * the value. Repaints grid if auto repainting is enabled.
      *
-     * @param layer  The grid layer to fill the row of. If not a valid layer, the grid will not be
-     *               changed.
-     * @param column The x-coordinate of the column to fill. If not a valid row, the grid will not
-     *               be changed.
+     * @param layer  The grid layer to fill the row of. If not a valid layer,
+     *               the grid will not be changed.
+     * @param column The x-coordinate of the column to fill. If not a valid row,
+     *               the grid will not be changed.
      * @param value  The value to set all the cells in the column to.
      * @see SimpleGrid#setAutoRepaint(boolean)
      * @since 1.2.4
@@ -418,12 +467,14 @@ public class SimpleGrid {
     }
 
     /**
-     * Returns the value of the cell at the given coordinates. Gets the cell of the default grid
-     * (layer 0). This is equivalent to calling get(0, Point).
+     * Returns the value of the cell at the given coordinates. Gets the cell of
+     * the default grid (layer 0). This is equivalent to calling get(0, pos).
      *
      * @param pos The coordinates of the cell to get.
-     * @return The value of the cell. If the given position is null, returns -1.
-     * @throws NullPointerException If the given position is null.
+     * @return The value of the cell.
+     * @throws NullPointerException          If the given position is null.
+     * @throws GridIndexOutOfBoundsException If the given coordinates are out of
+     *                                       bounds.
      * @see SimpleGrid#get(int, int)
      * @see SimpleGrid#get(int, Point)
      */
@@ -432,12 +483,14 @@ public class SimpleGrid {
     }
 
     /**
-     * Returns the value of the cell at the given coordinates. Gets the cell of the default
-     * grid (layer 0). This is equivalent to calling get(0, int, int).
+     * Returns the value of the cell at the given coordinates. Gets the cell of
+     * the default grid (layer 0). This is equivalent to calling get(0, x, y).
      *
      * @param x The x-coordinate of the cell to get.
      * @param y The y-coordinate of the cell to get.
      * @return The value of the cell.
+     * @throws GridIndexOutOfBoundsException If the given coordinates are out of
+     *                                       bounds.
      * @see SimpleGrid#get(Point)
      * @see SimpleGrid#get(int, int, int)
      */
@@ -450,8 +503,11 @@ public class SimpleGrid {
      *
      * @param layer The layer of the cell to get.
      * @param pos   The coordinates of the cell to get.
-     * @return The value of the cell. If the given position is null, returns -1.
-     * @throws NullPointerException If the given position is null.
+     * @return The value of the cell.
+     * @throws NullPointerException          If the given position is null.
+     * @throws IllegalArgumentException      If the given layer does not exist.
+     * @throws GridIndexOutOfBoundsException If the given coordinates are out of
+     *                                       bounds.
      * @see SimpleGrid#get(int, int, int)
      * @since v1.1
      */
@@ -469,7 +525,9 @@ public class SimpleGrid {
      * @param x     The x-coordinate of the cell to get.
      * @param y     The y-coordinate of the cell to get.
      * @return The value of the cell.
-     * @throws IllegalArgumentException If the given layer does not exist.
+     * @throws IllegalArgumentException      If the given layer does not exist.
+     * @throws GridIndexOutOfBoundsException If the given coordinates are out of
+     *                                       bounds.
      * @see SimpleGrid#get(int, Point)
      * @since v1.1
      */
@@ -477,11 +535,15 @@ public class SimpleGrid {
         if (layer < 0 || layer > this.grids.size() - 1) {
             throw new IllegalArgumentException("Must specify a valid layer.");
         }
+        if (isOOB(x, y)) {
+            throw new GridIndexOutOfBoundsException("Grid coordinates must be in bounds.");
+        }
         return this.grids.get(layer)[y][x];
     }
 
     /**
-     * Set the color of the gridlines. Repaints grid if auto repainting is enabled.
+     * Set the color of the gridlines. Repaints grid if auto repainting is
+     * enabled.
      *
      * @param color The color to set the gridlines to.
      * @see SimpleGrid#setAutoRepaint(boolean)
@@ -492,10 +554,11 @@ public class SimpleGrid {
     }
 
     /**
-     * Maps default value data to a value if the value doesn't have any data already mapped.
+     * Maps default value data to a value if the value doesn't have any data
+     * already mapped.
      *
-     * @param value The value to check for existing mapped data and to map default data to if it has
-     *              no mappings.
+     * @param value The value to check for existing mapped data and to map
+     *              default data to if it has no mappings.
      * @since v1.2
      */
     private void ensureValueData(int value) {
@@ -505,12 +568,13 @@ public class SimpleGrid {
     }
 
     /**
-     * Assigns a color to a given value. All cells with this value will be colored this color.
-     * Repaints grid if auto repainting is enabled.
+     * Assigns a color to a given value. All cells with this value will be
+     * colored this color. Repaints grid if auto repainting is enabled.
      *
      * @param value The value to set the color of.
-     * @param color The color to be assigned to the value. If null, the cell color will white if the
-     *              cell is on layer 0, otherwise the cell color will be transparent.
+     * @param color The color to be assigned to the value. If null, the cell
+     *              color will white if the cell is on layer 0, otherwise the
+     *              cell color will be transparent.
      * @see SimpleGrid#setAutoRepaint(boolean)
      */
     public void setColor(int value, Color color) {
@@ -520,8 +584,8 @@ public class SimpleGrid {
     }
 
     /**
-     * Assigns a text color to a given value. All cells with this value will be colored this color.
-     * Repaints grid if auto repainting is enabled.
+     * Assigns a text color to a given value. All cells with this value will be
+     * colored this color. Repaints grid if auto repainting is enabled.
      *
      * @param value     The value to set the text color of.
      * @param textColor The text color to be assigned to the value.
@@ -539,12 +603,12 @@ public class SimpleGrid {
     }
 
     /**
-     * Assigns a text character to a given value. All cells with this value will display this
-     * character. Repaints grid if auto repainting is enabled.
+     * Assigns a text character to a given value. All cells with this value will
+     * display this character. Repaints grid if auto repainting is enabled.
      *
      * @param value The value to set the text of.
-     * @param text  The text character to be assigned to the value. If '\0', cells with this value
-     *              will display nothing.
+     * @param text  The text character to be assigned to the value. If '\0',
+     *              cells with this value will display nothing.
      * @see SimpleGrid#setAutoRepaint(boolean)
      * @since v1.2
      */
@@ -613,7 +677,8 @@ public class SimpleGrid {
     }
 
     /**
-     * This class paints the grid and can give information on the grid settings and mouse cursor.
+     * This class paints the grid and can give information on the grid settings
+     * and mouse cursor.
      */
     private class GridPanel extends JPanel {
         private static final long serialVersionUID = 4114771226550991401L;
@@ -646,19 +711,18 @@ public class SimpleGrid {
         }
 
         /**
-         * Paints the entire grid. The grid cells are colored and filled according to the colors and
-         * text assigned to their current values.
+         * Paints the entire grid. The grid cells are colored and filled
+         * according to the colors and text assigned to their current values.
          * <p>
-         * If a cell color is "null" then only the cell's text will be drawn, unless the cell is on
-         * layer 0, in which case the cell will be painted white. If a cell's text is '\0' it will
-         * not be drawn.
+         * If a cell color is "null" then only the cell's text will be drawn,
+         * unless the cell is on layer 0, in which case the cell will be painted
+         * white. If a cell's text is '\0' it will not be drawn.
          * <p>
-         * The final appearance of each cell will be as follows:
-         * <ul>
-         * <li>The cell will be painted with the topmost non-null color</li>
-         * <li>The cell will contain the text of the topmost non '\0' character</li>
-         * <li>If a non-null color is above this character, no text will be drawn</li>
-         * </ul>
+         * The final appearance of each cell will be as follows: <ul> <li>The
+         * cell will be painted with the topmost non-null color</li> <li>The
+         * cell will contain the text of the topmost non '\0' character</li>
+         * <li>If a non-null color is above this character, no text will be
+         * drawn</li> </ul>
          *
          * @param g The graphics object that the grid will be painted with.
          */
@@ -710,8 +774,8 @@ public class SimpleGrid {
         }
 
         /**
-         * Creates a Monospaced, bold font with a size such that one character will fit inside of
-         * one cell.
+         * Creates a Monospaced, bold font with a size such that one character
+         * will fit inside of one cell.
          *
          * @param g A graphics object that will be used to paint the grid.
          * @since v1.2
@@ -730,7 +794,8 @@ public class SimpleGrid {
         /**
          * Draws a character in the center of a cell.
          *
-         * @param g         The graphics object that the character will be drawn with.
+         * @param g         The graphics object that the character will be drawn
+         *                  with.
          * @param x         The x-coordinate of the cell to draw in.
          * @param y         The y-coordinate of the cell to drawn in.
          * @param c         The character to draw in the cell.
@@ -753,8 +818,9 @@ public class SimpleGrid {
         /**
          * Returns the grid position of the mouse cursor.
          *
-         * @return The xy-coordinates of the cell the mouse cursor is currently over. If the mouse
-         * is out-of-bounds or over gridlines, returns null instead.
+         * @return The xy-coordinates of the cell the mouse cursor is currently
+         * over. If the mouse is out-of-bounds or over gridlines, returns null
+         * instead.
          */
         public Point getMouseCell() {
             Point pos = getMousePosition();
@@ -782,7 +848,8 @@ public class SimpleGrid {
     }
 
     /**
-     * This class monitors mouse activity, such as pressing and releasing the mouse button.
+     * This class monitors mouse activity, such as pressing and releasing the
+     * mouse button.
      */
     private class MouseListener extends MouseAdapter {
         @Override
@@ -793,6 +860,31 @@ public class SimpleGrid {
         @Override
         public void mouseReleased(MouseEvent e) {
             SimpleGrid.this.mouseDown = false;
+        }
+    }
+
+    /**
+     * Thrown to indicate that an index of a grid coordinate is out of range.
+     *
+     * @since 1.2.9
+     */
+    public class GridIndexOutOfBoundsException extends IndexOutOfBoundsException {
+        /**
+         * Constructs a <code>GridIndexOutOfBoundsException</code> with no
+         * detail message.
+         */
+        public GridIndexOutOfBoundsException() {
+            super();
+        }
+
+        /**
+         * Constructs a <code>GridIndexOutOfBoundsException</code> with the
+         * specified detail message.
+         *
+         * @param message the detail message.
+         */
+        public GridIndexOutOfBoundsException(String message) {
+            super(message);
         }
     }
 }
